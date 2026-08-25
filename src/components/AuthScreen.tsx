@@ -17,6 +17,33 @@ export default function AuthScreen() {
 
   const isConfigured = isSupabaseConfigured();
 
+  const handleForgotPassword = async () => {
+    if (!isConfigured) {
+      setErrorMessage('Ajoutez vos variables Supabase avant de continuer.');
+      return;
+    }
+    if (!email) {
+      setErrorMessage('Entrez votre e-mail ci-dessus, puis cliquez à nouveau.');
+      return;
+    }
+
+    setIsSubmitting(true);
+    setErrorMessage('');
+    setNoticeMessage('');
+
+    try {
+      const { error } = await getSupabaseClient().auth.resetPasswordForEmail(email, {
+        redirectTo: window.location.origin,
+      });
+      if (error) throw error;
+      setNoticeMessage('E-mail envoyé. Vérifiez votre boîte de réception (et les spams).');
+    } catch (error) {
+      setErrorMessage(error instanceof Error ? error.message : 'Impossible d\'envoyer l\'e-mail.');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
@@ -105,10 +132,22 @@ export default function AuthScreen() {
           </div>
 
           <div className="space-y-2">
-            <Label className="text-white/75">
-              <LockKeyhole className="mr-2 inline h-4 w-4" />
-              Mot de passe
-            </Label>
+            <div className="flex items-center justify-between">
+              <Label className="text-white/75">
+                <LockKeyhole className="mr-2 inline h-4 w-4" />
+                Mot de passe
+              </Label>
+              {mode === 'signin' && (
+                <button
+                  type="button"
+                  onClick={handleForgotPassword}
+                  disabled={isSubmitting}
+                  className="text-xs text-indigo-200/80 underline-offset-2 hover:underline"
+                >
+                  Mot de passe oublié ?
+                </button>
+              )}
+            </div>
             <Input
               autoComplete={mode === 'signin' ? 'current-password' : 'new-password'}
               className="border-white/15 bg-white/10 text-white placeholder:text-white/35"

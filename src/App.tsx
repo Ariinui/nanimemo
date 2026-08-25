@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import type { Session } from '@supabase/supabase-js';
 import { getSupabaseClient, isSupabaseConfigured } from '@/lib/supabase';
 import AuthScreen from '@/components/AuthScreen';
+import ResetPasswordScreen from '@/components/ResetPasswordScreen';
 import Home from '@/pages/Home';
 import SetEditor from '@/components/SetEditor';
 import { Toaster } from '@/components/ui/sonner';
@@ -19,6 +20,7 @@ export default function App() {
   const [session, setSession] = useState<Session | null>(null);
   const [authLoading, setAuthLoading] = useState(isSupabaseConfigured());
   const [activeSet, setActiveSet] = useState<VocabSet | null>(null);
+  const [isPasswordRecovery, setIsPasswordRecovery] = useState(false);
 
   useEffect(() => {
     if (!isSupabaseConfigured()) return;
@@ -32,8 +34,9 @@ export default function App() {
       setAuthLoading(false);
     });
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, next) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, next) => {
       if (cancelled) return;
+      if (event === 'PASSWORD_RECOVERY') setIsPasswordRecovery(true);
       setSession(next);
       if (!next) setActiveSet(null);
     });
@@ -48,6 +51,15 @@ export default function App() {
     return (
       <>
         <LoadingScreen />
+        <Toaster position="top-center" />
+      </>
+    );
+  }
+
+  if (isPasswordRecovery) {
+    return (
+      <>
+        <ResetPasswordScreen onDone={() => setIsPasswordRecovery(false)} />
         <Toaster position="top-center" />
       </>
     );
