@@ -1,74 +1,26 @@
-import { useEffect, useState } from 'react';
-import type { Session } from '@supabase/supabase-js';
-import { getSupabaseClient, isSupabaseConfigured } from '@/lib/supabase';
+import { useState } from 'react';
 import AuthScreen from '@/components/AuthScreen';
-import ResetPasswordScreen from '@/components/ResetPasswordScreen';
 import Home from '@/pages/Home';
 import SetEditor from '@/components/SetEditor';
 import { Toaster } from '@/components/ui/sonner';
+import { FIXED_USER_ID } from '@/lib/constants';
 import type { VocabSet } from '@/types/vocab';
 
-function LoadingScreen() {
-  return (
-    <div className="flex min-h-screen items-center justify-center bg-background">
-      <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary/20 border-t-primary" />
-    </div>
-  );
-}
+const ENTERED_KEY = 'nanimemo_entered';
 
 export default function App() {
-  const [session, setSession] = useState<Session | null>(null);
-  const [authLoading, setAuthLoading] = useState(isSupabaseConfigured());
+  const [entered, setEntered] = useState(() => localStorage.getItem(ENTERED_KEY) === 'true');
   const [activeSet, setActiveSet] = useState<VocabSet | null>(null);
-  const [isPasswordRecovery, setIsPasswordRecovery] = useState(false);
 
-  useEffect(() => {
-    if (!isSupabaseConfigured()) return;
+  const handleEnter = () => {
+    localStorage.setItem(ENTERED_KEY, 'true');
+    setEntered(true);
+  };
 
-    const supabase = getSupabaseClient();
-    let cancelled = false;
-
-    void supabase.auth.getSession().then(({ data }) => {
-      if (cancelled) return;
-      setSession(data.session ?? null);
-      setAuthLoading(false);
-    });
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, next) => {
-      if (cancelled) return;
-      if (event === 'PASSWORD_RECOVERY') setIsPasswordRecovery(true);
-      setSession(next);
-      if (!next) setActiveSet(null);
-    });
-
-    return () => {
-      cancelled = true;
-      subscription.unsubscribe();
-    };
-  }, []);
-
-  if (authLoading) {
+  if (!entered) {
     return (
       <>
-        <LoadingScreen />
-        <Toaster position="top-center" />
-      </>
-    );
-  }
-
-  if (isPasswordRecovery) {
-    return (
-      <>
-        <ResetPasswordScreen onDone={() => setIsPasswordRecovery(false)} />
-        <Toaster position="top-center" />
-      </>
-    );
-  }
-
-  if (!session) {
-    return (
-      <>
-        <AuthScreen />
+        <AuthScreen onEnter={handleEnter} />
         <Toaster position="top-center" />
       </>
     );
@@ -79,11 +31,11 @@ export default function App() {
       {activeSet ? (
         <SetEditor
           set={activeSet}
-          userId={session.user.id}
+          userId={FIXED_USER_ID}
           onBack={() => setActiveSet(null)}
         />
       ) : (
-        <Home userId={session.user.id} onOpenSet={setActiveSet} />
+        <Home userId={FIXED_USER_ID} onOpenSet={setActiveSet} />
       )}
       <Toaster position="top-center" />
     </>

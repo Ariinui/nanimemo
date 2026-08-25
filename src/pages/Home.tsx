@@ -11,7 +11,6 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { createSet, fetchSets } from '@/lib/vocabApi';
-import { getSupabaseClient } from '@/lib/supabase';
 import type { VocabSet } from '@/types/vocab';
 
 interface HomeProps {
@@ -59,9 +58,9 @@ export default function Home({ userId, onOpenSet }: HomeProps) {
     }
   };
 
-  const handleSignOut = async () => {
-    const { error } = await getSupabaseClient().auth.signOut();
-    if (error) toast.error('La déconnexion a échoué.');
+  const handleSignOut = () => {
+    localStorage.removeItem('nanimemo_entered');
+    window.location.reload();
   };
 
   return (

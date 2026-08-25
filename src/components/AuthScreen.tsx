@@ -7,7 +7,11 @@ import { Label } from '@/components/ui/label';
 
 type AuthMode = 'signin' | 'signup';
 
-export default function AuthScreen() {
+interface AuthScreenProps {
+  onEnter: () => void;
+}
+
+export default function AuthScreen({ onEnter }: AuthScreenProps) {
   const [mode, setMode] = useState<AuthMode>('signin');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -44,41 +48,9 @@ export default function AuthScreen() {
     }
   };
 
-  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-
-    if (!isConfigured) {
-      setErrorMessage('Ajoutez vos variables Supabase avant de continuer.');
-      return;
-    }
-
-    setIsSubmitting(true);
-    setErrorMessage('');
-    setNoticeMessage('');
-
-    try {
-      const supabase = getSupabaseClient();
-
-      if (mode === 'signin') {
-        const { error } = await supabase.auth.signInWithPassword({ email, password });
-        if (error) throw error;
-      } else {
-        const { data, error } = await supabase.auth.signUp({ email, password });
-        if (error) throw error;
-
-        if (!data.session) {
-          setNoticeMessage(
-            'Compte créé. Vérifiez votre e-mail si Supabase demande une confirmation, puis connectez-vous.'
-          );
-        } else {
-          setNoticeMessage('Compte créé et connexion établie.');
-        }
-      }
-    } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : 'Impossible de traiter la demande.');
-    } finally {
-      setIsSubmitting(false);
-    }
+    onEnter();
   };
 
   return (
