@@ -3,6 +3,7 @@ export interface VocabSet {
   user_id: string;
   title: string;
   description: string | null;
+  lesson: SetLesson | null;
   created_at: string;
   updated_at: string;
 }

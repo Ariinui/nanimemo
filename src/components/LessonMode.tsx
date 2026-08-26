@@ -1,27 +1,14 @@
 import { X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import type { VocabSet, SetLesson } from '@/types/vocab';
+import type { VocabSet } from '@/types/vocab';
 
 interface LessonModeProps {
   set: VocabSet;
   onBack: () => void;
 }
 
-function parseLesson(description: string | null): SetLesson | null {
-  if (!description) return null;
-  try {
-    const parsed = JSON.parse(description);
-    if (parsed && typeof parsed === 'object' && Array.isArray(parsed.categories)) {
-      return parsed as SetLesson;
-    }
-    return null;
-  } catch {
-    return null;
-  }
-}
-
 export default function LessonMode({ set, onBack }: LessonModeProps) {
-  const lesson = parseLesson(set.description);
+  const lesson = set.lesson;
 
   return (
     <div className="mx-auto flex max-w-2xl flex-col gap-4 px-4 py-4">
