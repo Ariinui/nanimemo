@@ -27,6 +27,10 @@ function buildTiles(cards: VocabCard[]): Tile[] {
   return shuffle(tiles);
 }
 
+function bestTimeKey(setId: string) {
+  return `nanimemo_match_best_${setId}`;
+}
+
 export default function MatchMode({ cards, onBack }: MatchModeProps) {
   const [tiles, setTiles] = useState<Tile[]>(() => buildTiles(cards));
   const [selected, setSelected] = useState<string | null>(null);
@@ -34,9 +38,23 @@ export default function MatchMode({ cards, onBack }: MatchModeProps) {
   const [shaking, setShaking] = useState<Set<string>>(new Set());
   const [elapsed, setElapsed] = useState(0);
   const [finished, setFinished] = useState(false);
+  const [bestTime, setBestTime] = useState<number | null>(null);
+  const [isNewBest, setIsNewBest] = useState(false);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
+  const setId = cards[0]?.set_id ?? '';
   const pairTotal = tiles.length / 2;
+
+  useEffect(() => {
+    if (!setId) return;
+    try {
+      const stored = localStorage.getItem(bestTimeKey(setId));
+      if (stored) setBestTime(parseFloat(stored));
+    } catch {
+      // localStorage indisponible (navigation privée) — pas grave, juste pas de record
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [setId]);
 
   useEffect(() => {
     intervalRef.current = setInterval(() => setElapsed((t) => t + 0.1), 100);
@@ -78,6 +96,16 @@ export default function MatchMode({ cards, onBack }: MatchModeProps) {
       if (nextSolved.size === tiles.length) {
         if (intervalRef.current) clearInterval(intervalRef.current);
         setFinished(true);
+        const newBest = bestTime === null || elapsed < bestTime;
+        setIsNewBest(newBest);
+        if (newBest && setId) {
+          setBestTime(elapsed);
+          try {
+            localStorage.setItem(bestTimeKey(setId), String(elapsed));
+          } catch {
+            // pas grave si indisponible
+          }
+        }
       }
     } else {
       setShaking(new Set([first.key, tile.key]));
@@ -108,7 +136,12 @@ export default function MatchMode({ cards, onBack }: MatchModeProps) {
       {finished ? (
         <div className="flex flex-col items-center gap-4 rounded-2xl border bg-card p-10 text-center shadow-sm">
           <PartyPopper className="h-10 w-10 text-primary" />
-          <p className="text-xl font-bold">Terminé en {elapsed.toFixed(1)}s !</p>
+          <p className="text-xl font-bold">
+            {isNewBest ? 'Nouveau record !' : 'Terminé !'}
+          </p>
+          <p className="text-sm text-muted-foreground">
+            Votre {isNewBest ? '' : 'meilleur '}temps : {(isNewBest ? elapsed : (bestTime ?? elapsed)).toFixed(1)} secondes
+          </p>
           <div className="flex gap-2">
             <Button variant="outline" onClick={onBack}>Retour au set</Button>
             <Button onClick={restart}>
@@ -129,9 +162,9 @@ export default function MatchMode({ cards, onBack }: MatchModeProps) {
                 type="button"
                 disabled={isSolved}
                 onClick={() => handleTileClick(tile)}
-                className={`flex min-h-20 items-center justify-center rounded-xl border p-3 text-center text-sm font-semibold transition-all select-none ${
+                className={`flex min-h-20 items-center justify-center rounded-xl border p-3 text-center text-sm font-semibold transition-all duration-300 select-none ${
                   isSolved
-                    ? 'border-success bg-success/10 text-success/80 cursor-default'
+                    ? 'pointer-events-none border-transparent opacity-0'
                     : isSelected
                       ? 'border-primary bg-primary/10 shadow-[0_0_20px_rgba(99,102,241,0.25)]'
                       : 'border-border bg-card hover:border-primary/50 hover:bg-accent'
