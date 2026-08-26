@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import type { VocabSet } from '@/types/vocab';
@@ -9,6 +10,16 @@ interface LessonModeProps {
 
 export default function LessonMode({ set, onBack }: LessonModeProps) {
   const lesson = set.lesson;
+  const [revealed, setRevealed] = useState<Set<number>>(new Set());
+
+  const toggleRevealed = (i: number) => {
+    setRevealed((prev) => {
+      const next = new Set(prev);
+      if (next.has(i)) next.delete(i);
+      else next.add(i);
+      return next;
+    });
+  };
 
   return (
     <div className="mx-auto flex max-w-2xl flex-col gap-4 px-4 py-4">
@@ -49,6 +60,30 @@ export default function LessonMode({ set, onBack }: LessonModeProps) {
               </tbody>
             </table>
           </div>
+
+          {lesson.quickRef.length > 0 && (
+            <div className="rounded-2xl border bg-card p-5 shadow-sm">
+              <h3 className="mb-1 font-bold">Repère rapide</h3>
+              <p className="mb-3 text-sm text-muted-foreground">
+                Touchez un terme pour révéler sa catégorie et vous auto-tester.
+              </p>
+              <div className="grid gap-1 sm:grid-cols-2">
+                {lesson.quickRef.map((item, i) => (
+                  <button
+                    key={item.term}
+                    type="button"
+                    onClick={() => toggleRevealed(i)}
+                    className="flex items-center justify-between rounded-lg border px-3 py-2 text-left text-sm transition-colors hover:bg-accent"
+                  >
+                    <span className="font-medium">{item.term}</span>
+                    <span className={revealed.has(i) ? 'text-muted-foreground' : 'text-muted-foreground/40'}>
+                      {revealed.has(i) ? item.category : '?'}
+                    </span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
 
           <div className="rounded-2xl border bg-card p-5 shadow-sm">
             <h3 className="mb-2 font-bold">{lesson.story.title}</h3>

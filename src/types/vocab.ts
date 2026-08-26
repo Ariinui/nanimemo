@@ -46,9 +46,15 @@ export interface LessonTip {
   body: string;
 }
 
+export interface LessonQuickRefItem {
+  term: string;
+  category: string;
+}
+
 export interface SetLesson {
   intro: string;
   categories: LessonCategory[];
+  quickRef: LessonQuickRefItem[];
   story: {
     title: string;
     intro: string;
