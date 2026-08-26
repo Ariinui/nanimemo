@@ -32,7 +32,7 @@ export interface CardWithProgress extends VocabCard {
   progress: VocabProgress | null;
 }
 
-export type StudyMode = 'cards' | 'learn' | 'test';
+export type StudyMode = 'cards' | 'learn' | 'test' | 'match';
 
 export type QuestionType = 'qcm' | 'written' | 'truefalse';
 

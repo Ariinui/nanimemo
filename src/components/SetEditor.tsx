@@ -1,13 +1,26 @@
 import { useEffect, useState } from 'react';
-import { ArrowLeft, ImagePlus, LoaderCircle, Plus, Trash2 } from 'lucide-react';
+import { ArrowLeft, Brain, FileCheck2, ImagePlus, Layers, LoaderCircle, Plus, Shuffle, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import ImportDialog from '@/components/ImportDialog';
 import FlashcardMode from '@/components/FlashcardMode';
 import LearnMode from '@/components/LearnMode';
 import TestMode from '@/components/TestMode';
+import MatchMode from '@/components/MatchMode';
 import { deleteCard, deleteSet, fetchCards, insertCards, updateCardImage } from '@/lib/vocabApi';
 import type { VocabCard, VocabSet, StudyMode } from '@/types/vocab';
+
+const MODE_BUTTONS: {
+  mode: StudyMode;
+  label: string;
+  icon: typeof Layers;
+  colorClass: string;
+}[] = [
+  { mode: 'cards', label: 'Cartes', icon: Layers, colorClass: 'text-sky-400 bg-sky-400/10' },
+  { mode: 'learn', label: 'Apprendre', icon: Brain, colorClass: 'text-violet-400 bg-violet-400/10' },
+  { mode: 'match', label: 'Associer', icon: Shuffle, colorClass: 'text-amber-400 bg-amber-400/10' },
+  { mode: 'test', label: 'Test', icon: FileCheck2, colorClass: 'text-emerald-400 bg-emerald-400/10' },
+];
 
 interface PixabayImage {
   id: number;
@@ -121,6 +134,7 @@ export default function SetEditor({ set, userId, onBack }: SetEditorProps) {
 
   if (mode === 'cards') return <FlashcardMode cards={cards} onBack={() => setMode(null)} />;
   if (mode === 'learn') return <LearnMode cards={cards} userId={userId} onBack={() => setMode(null)} />;
+  if (mode === 'match') return <MatchMode cards={cards} onBack={() => setMode(null)} />;
   if (mode === 'test') return <TestMode cards={cards} onBack={() => setMode(null)} />;
 
   return (
@@ -138,16 +152,40 @@ export default function SetEditor({ set, userId, onBack }: SetEditorProps) {
         </Button>
       </div>
 
-      <div className="mb-6 grid grid-cols-3 gap-3">
-        <Button variant="outline" className="h-16 flex-col gap-1" onClick={() => setMode('cards')} disabled={cards.length === 0}>
-          Cartes
-        </Button>
-        <Button variant="outline" className="h-16 flex-col gap-1" onClick={() => setMode('learn')} disabled={cards.length === 0}>
-          Apprendre
-        </Button>
-        <Button variant="outline" className="h-16 flex-col gap-1" onClick={() => setMode('test')} disabled={cards.length === 0}>
-          Test
-        </Button>
+      {cards.length > 0 && (
+        <button
+          type="button"
+          onClick={() => setMode('cards')}
+          className="group mb-6 flex w-full items-center gap-4 rounded-2xl border bg-card p-5 text-left shadow-sm transition-colors hover:border-primary/40 hover:bg-accent"
+        >
+          {cards[0].image_url && (
+            <img src={cards[0].image_url} alt="" className="h-16 w-16 shrink-0 rounded-lg object-cover" />
+          )}
+          <div className="min-w-0 flex-1">
+            <p className="truncate text-lg font-semibold">{cards[0].term}</p>
+            <p className="truncate text-sm text-muted-foreground">{cards[0].definition}</p>
+          </div>
+          <span className="shrink-0 text-xs font-medium text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100">
+            Étudier →
+          </span>
+        </button>
+      )}
+
+      <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
+        {MODE_BUTTONS.map(({ mode: m, label, icon: Icon, colorClass }) => (
+          <Button
+            key={m}
+            variant="outline"
+            className="h-20 flex-col gap-2"
+            onClick={() => setMode(m)}
+            disabled={cards.length === 0}
+          >
+            <span className={`flex h-8 w-8 items-center justify-center rounded-full ${colorClass}`}>
+              <Icon className="h-4 w-4" />
+            </span>
+            {label}
+          </Button>
+        ))}
       </div>
 
       <div className="mb-4 flex items-center justify-between">
