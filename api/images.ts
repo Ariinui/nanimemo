@@ -14,7 +14,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return;
   }
 
-  const apiKey = process.env.PIXABAY_API_KEY;
+  const apiKey = process.env.PIXABAY_API_KEY?.trim();
   if (!apiKey) {
     res.status(503).json({ error: 'Pixabay non configuré (PIXABAY_API_KEY manquante)' });
     return;
@@ -25,16 +25,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   try {
     const response = await fetch(url);
     if (!response.ok) {
-      const body = await response.text();
-      res.status(502).json({
-        error: 'Erreur Pixabay',
-        debug: {
-          keyLength: apiKey.length,
-          keyPreview: apiKey.slice(0, 3) + '...' + apiKey.slice(-3),
-          pixabayStatus: response.status,
-          pixabayBody: body.slice(0, 300),
-        },
-      });
+      res.status(502).json({ error: 'Erreur Pixabay' });
       return;
     }
     const data = (await response.json()) as { hits: PixabayHit[] };
