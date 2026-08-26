@@ -4,8 +4,8 @@
   "description": "Cartes mémo : import, apprentissage et tests",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#0f0f23",
-  "theme_color": "#4338ca",
+  "background_color": "#062a4a",
+  "theme_color": "#0d3b5c",
   "orientation": "portrait",
   "icons": [
     { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
