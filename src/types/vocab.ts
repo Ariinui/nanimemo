@@ -35,10 +35,9 @@ export interface CardWithProgress extends VocabCard {
 
 export type StudyMode = 'cards' | 'learn' | 'test' | 'match' | 'lesson';
 
-export interface LessonCategory {
-  name: string;
-  items: string[];
-  note?: string;
+export interface LessonTable {
+  headers: string[];
+  rows: string[][];
 }
 
 export interface LessonTip {
@@ -53,7 +52,7 @@ export interface LessonQuickRefItem {
 
 export interface SetLesson {
   intro: string;
-  categories: LessonCategory[];
+  table: LessonTable;
   quickRef: LessonQuickRefItem[];
   story: {
     title: string;

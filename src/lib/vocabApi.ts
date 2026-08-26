@@ -1,5 +1,5 @@
 import { getSupabaseClient } from '@/lib/supabase';
-import type { VocabSet, VocabCard, VocabProgress, MasteryBox } from '@/types/vocab';
+import type { VocabSet, VocabCard, VocabProgress, MasteryBox, SetLesson } from '@/types/vocab';
 
 export async function fetchSets(userId: string): Promise<VocabSet[]> {
   const supabase = getSupabaseClient();
@@ -21,6 +21,12 @@ export async function createSet(userId: string, title: string, description: stri
     .single();
   if (error) throw error;
   return data as VocabSet;
+}
+
+export async function updateSetLesson(setId: string, lesson: SetLesson): Promise<void> {
+  const supabase = getSupabaseClient();
+  const { error } = await supabase.from('vocab_sets').update({ lesson }).eq('id', setId);
+  if (error) throw error;
 }
 
 export async function deleteSet(setId: string): Promise<void> {

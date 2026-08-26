@@ -38,6 +38,7 @@ interface SetEditorProps {
 }
 
 export default function SetEditor({ set, userId, onBack }: SetEditorProps) {
+  const [lesson, setLesson] = useState(set.lesson);
   const [cards, setCards] = useState<VocabCard[]>([]);
   const [loading, setLoading] = useState(true);
   const [importOpen, setImportOpen] = useState(false);
@@ -139,7 +140,14 @@ export default function SetEditor({ set, userId, onBack }: SetEditorProps) {
   if (mode === 'learn') return <LearnMode cards={cards} userId={userId} onBack={() => setMode(null)} />;
   if (mode === 'match') return <MatchMode cards={cards} onBack={() => setMode(null)} />;
   if (mode === 'test') return <TestMode cards={cards} onBack={() => setMode(null)} />;
-  if (mode === 'lesson') return <LessonMode set={set} onBack={() => setMode(null)} />;
+  if (mode === 'lesson')
+    return (
+      <LessonMode
+        set={{ ...set, lesson }}
+        onBack={() => setMode(null)}
+        onLessonUpdated={setLesson}
+      />
+    );
 
   return (
     <div className="mx-auto max-w-3xl px-4 py-6">

@@ -1,16 +1,19 @@
 import { useState } from 'react';
-import { X } from 'lucide-react';
+import { Pencil, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import type { VocabSet } from '@/types/vocab';
+import LessonEditor from '@/components/LessonEditor';
+import type { SetLesson, VocabSet } from '@/types/vocab';
 
 interface LessonModeProps {
   set: VocabSet;
   onBack: () => void;
+  onLessonUpdated: (lesson: SetLesson) => void;
 }
 
-export default function LessonMode({ set, onBack }: LessonModeProps) {
+export default function LessonMode({ set, onBack, onLessonUpdated }: LessonModeProps) {
   const lesson = set.lesson;
   const [revealed, setRevealed] = useState<Set<number>>(new Set());
+  const [editing, setEditing] = useState(false);
 
   const toggleRevealed = (i: number) => {
     setRevealed((prev) => {
@@ -29,37 +32,65 @@ export default function LessonMode({ set, onBack }: LessonModeProps) {
           Fermer
         </Button>
         <span className="text-sm font-semibold text-muted-foreground">Leçon</span>
+        {!editing && (
+          <Button variant="ghost" size="sm" onClick={() => setEditing(true)}>
+            <Pencil className="h-4 w-4" />
+            Modifier
+          </Button>
+        )}
       </div>
 
-      {!lesson ? (
+      {editing ? (
+        <LessonEditor
+          setId={set.id}
+          lesson={lesson}
+          onCancel={() => setEditing(false)}
+          onSaved={(updated) => {
+            onLessonUpdated(updated);
+            setEditing(false);
+          }}
+        />
+      ) : !lesson ? (
         <div className="rounded-lg border border-dashed p-10 text-center text-sm text-muted-foreground">
-          Aucune leçon pour ce set.
+          <p className="mb-4">Aucune leçon pour ce set.</p>
+          <Button size="sm" onClick={() => setEditing(true)}>
+            <Pencil className="h-4 w-4" />
+            Créer une leçon
+          </Button>
         </div>
       ) : (
         <div className="space-y-6 pb-8">
           <p className="text-sm text-muted-foreground">{lesson.intro}</p>
 
-          <div className="overflow-hidden rounded-2xl border">
-            <table className="w-full border-collapse text-sm">
-              <thead>
-                <tr className="bg-muted/50">
-                  <th className="p-3 text-left font-semibold">Catégorie</th>
-                  <th className="p-3 text-left font-semibold">Prépositions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {lesson.categories.map((cat) => (
-                  <tr key={cat.name} className="border-t">
-                    <td className="p-3 align-top font-medium">{cat.name}</td>
-                    <td className="p-3 align-top text-muted-foreground">
-                      {cat.items.join(', ')}
-                      {cat.note && <p className="mt-1 text-xs italic">{cat.note}</p>}
-                    </td>
+          {lesson.table.headers.length > 0 && (
+            <div className="overflow-x-auto rounded-2xl border">
+              <table className="w-full border-collapse text-sm">
+                <thead>
+                  <tr className="bg-muted/50">
+                    {lesson.table.headers.map((h, i) => (
+                      <th key={i} className="p-3 text-left font-semibold">
+                        {h}
+                      </th>
+                    ))}
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody>
+                  {lesson.table.rows.map((row, ri) => (
+                    <tr key={ri} className="border-t">
+                      {row.map((cell, ci) => (
+                        <td
+                          key={ci}
+                          className={ci === 0 ? 'p-3 align-top font-medium' : 'p-3 align-top text-muted-foreground'}
+                        >
+                          {cell}
+                        </td>
+                      ))}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
 
           {lesson.quickRef.length > 0 && (
             <div className="rounded-2xl border bg-card p-5 shadow-sm">
