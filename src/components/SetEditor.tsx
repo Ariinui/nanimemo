@@ -16,10 +16,10 @@ const MODE_BUTTONS: {
   icon: typeof Layers;
   colorClass: string;
 }[] = [
-  { mode: 'cards', label: 'Cartes', icon: Layers, colorClass: 'text-sky-400 bg-sky-400/10' },
-  { mode: 'learn', label: 'Apprendre', icon: Brain, colorClass: 'text-violet-400 bg-violet-400/10' },
-  { mode: 'match', label: 'Associer', icon: Shuffle, colorClass: 'text-amber-400 bg-amber-400/10' },
-  { mode: 'test', label: 'Test', icon: FileCheck2, colorClass: 'text-emerald-400 bg-emerald-400/10' },
+  { mode: 'cards', label: 'Cartes', icon: Layers, colorClass: 'text-sky-400' },
+  { mode: 'learn', label: 'Apprendre', icon: Brain, colorClass: 'text-violet-400' },
+  { mode: 'match', label: 'Associer', icon: Shuffle, colorClass: 'text-amber-400' },
+  { mode: 'test', label: 'Test', icon: FileCheck2, colorClass: 'text-emerald-400' },
 ];
 
 interface PixabayImage {
@@ -176,14 +176,12 @@ export default function SetEditor({ set, userId, onBack }: SetEditorProps) {
           <Button
             key={m}
             variant="outline"
-            className="h-20 flex-col gap-2"
+            className="h-12 justify-start gap-2.5 px-4"
             onClick={() => setMode(m)}
             disabled={cards.length === 0}
           >
-            <span className={`flex h-8 w-8 items-center justify-center rounded-full ${colorClass}`}>
-              <Icon className="h-4 w-4" />
-            </span>
-            {label}
+            <Icon className={`h-5 w-5 shrink-0 ${colorClass}`} />
+            <span className="truncate">{label}</span>
           </Button>
         ))}
       </div>
