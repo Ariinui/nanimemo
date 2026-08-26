@@ -126,6 +126,11 @@ export default function LearnMode({ cards, userId, onBack }: LearnModeProps) {
     void commitAnswer(isAnswerCorrect(question, writtenAnswer));
   };
 
+  const handleDontKnow = () => {
+    if (feedback) return;
+    void commitAnswer(false);
+  };
+
   return (
     <div className="mx-auto flex max-w-2xl flex-col gap-4 px-4 py-6">
       <div className="flex items-center justify-between">
@@ -136,8 +141,16 @@ export default function LearnMode({ cards, userId, onBack }: LearnModeProps) {
         <span className="text-sm text-muted-foreground">{totalCards - remaining} / {totalCards}</span>
       </div>
 
-      <div className="h-1.5 w-full overflow-hidden rounded-full bg-muted">
-        <div className="h-full bg-primary transition-all" style={{ width: `${progressPct}%` }} />
+      <div className="flex items-center gap-2">
+        <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary text-xs font-bold text-primary-foreground">
+          {totalCards - remaining}
+        </span>
+        <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-muted">
+          <div className="h-full bg-primary transition-all" style={{ width: `${progressPct}%` }} />
+        </div>
+        <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-muted text-xs font-bold text-muted-foreground">
+          {totalCards}
+        </span>
       </div>
 
       <div className="rounded-2xl border bg-card p-8 text-center shadow-sm">
@@ -146,7 +159,7 @@ export default function LearnMode({ cards, userId, onBack }: LearnModeProps) {
       </div>
 
       {question.type === 'qcm' && (
-        <div className="grid gap-2">
+        <div className="grid gap-2 sm:grid-cols-2">
           {question.choices.map((choice, i) => {
             const isCorrectChoice = i === question.correctIndex;
             const isSelected = selectedChoice === i;
@@ -155,12 +168,15 @@ export default function LearnMode({ cards, userId, onBack }: LearnModeProps) {
               <Button
                 key={i}
                 variant="outline"
-                className={`h-auto justify-start whitespace-normal py-3 text-left ${
+                className={`h-auto items-start justify-start gap-2.5 whitespace-normal py-3 text-left ${
                   showState && isCorrectChoice ? 'border-success bg-success/10' : ''
                 } ${showState && isSelected && !isCorrectChoice ? 'border-destructive bg-destructive/10' : ''}`}
                 onClick={() => handleQcmAnswer(i)}
                 disabled={feedback !== null}
               >
+                <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full border text-xs text-muted-foreground">
+                  {i + 1}
+                </span>
                 {choice}
               </Button>
             );
@@ -210,11 +226,19 @@ export default function LearnMode({ cards, userId, onBack }: LearnModeProps) {
         </form>
       )}
 
-      {feedback && (
+      {feedback ? (
         <div className={`flex items-center justify-center gap-2 text-sm font-medium ${feedback === 'correct' ? 'text-success' : 'text-destructive'}`}>
           {feedback === 'correct' ? <Check className="h-4 w-4" /> : <X className="h-4 w-4" />}
           {feedback === 'correct' ? 'Correct !' : 'Pas tout à fait'}
         </div>
+      ) : (
+        <button
+          type="button"
+          onClick={handleDontKnow}
+          className="text-center text-sm text-primary/80 underline-offset-2 hover:underline"
+        >
+          Vous ne savez pas ?
+        </button>
       )}
     </div>
   );

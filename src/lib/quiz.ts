@@ -4,6 +4,7 @@ import type {
   QcmQuestion,
   WrittenQuestion,
   TrueFalseQuestion,
+  QuestionType,
 } from '@/types/vocab';
 
 export function shuffle<T>(arr: T[]): T[] {
@@ -94,13 +95,37 @@ export function generateQuestion(
   return generateTrueFalse(allCards, targetCard);
 }
 
-export function generateTestSession(allCards: VocabCard[], count: number): Question[] {
+/**
+ * Génère une question en respectant les types autorisés (config du Test,
+ * façon "Configurez votre test" de Quizlet). Retombe toujours sur un type
+ * autorisé même si le premier choix n'est pas disponible pour cette carte.
+ */
+export function generateConfigurableQuestion(
+  allCards: VocabCard[],
+  targetCard: VocabCard,
+  allowedTypes: Set<QuestionType>
+): Question {
+  if (allowedTypes.has('qcm')) {
+    const qcm = tryGenerateQcm(allCards, targetCard);
+    if (qcm) return qcm;
+  }
+  if (allowedTypes.has('truefalse')) {
+    return generateTrueFalse(allCards, targetCard);
+  }
+  return generateWritten(targetCard);
+}
+
+export function generateTestSession(
+  allCards: VocabCard[],
+  count: number,
+  allowedTypes: Set<QuestionType> = new Set(['qcm', 'truefalse', 'written'])
+): Question[] {
   if (allCards.length === 0) return [];
   const pool = shuffle(allCards);
   const questions: Question[] = [];
   for (let i = 0; i < count; i++) {
     const card = pool[i % pool.length];
-    questions.push(generateQuestion(allCards, card));
+    questions.push(generateConfigurableQuestion(allCards, card, allowedTypes));
   }
   return questions;
 }
