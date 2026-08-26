@@ -23,8 +23,12 @@ const PREPOSITIONS: VocabCard[] = [
   makeCard('13', 'chez', 'LIEU (où ?)'),
 ];
 
+function correctAnswerFor(question: { direction: 'term-to-def' | 'def-to-term'; card: VocabCard }): string {
+  return question.direction === 'term-to-def' ? question.card.definition : question.card.term;
+}
+
 describe('quiz generation avoids ambiguous QCM', () => {
-  it('never produces a QCM with two identical definitions among the choices', () => {
+  it('never produces a QCM with two identical choices, in either direction', () => {
     for (let i = 0; i < 200; i++) {
       for (const card of PREPOSITIONS) {
         const question = generateQuestion(PREPOSITIONS, card);
@@ -42,19 +46,32 @@ describe('quiz generation avoids ambiguous QCM', () => {
       if (question.type === 'qcm') {
         const unique = new Set(question.choices);
         expect(unique.size).toBe(question.choices.length);
-        expect(question.choices[question.correctIndex]).toBe(question.card.definition);
+        expect(question.choices[question.correctIndex]).toBe(correctAnswerFor(question));
       }
     }
   });
 
-  it('falls back to written when only one definition exists in the whole set', () => {
+  it('falls back to written when the answer side has only one distinct value (term→def)', () => {
     const sameDef = [makeCard('a', 'un', 'X'), makeCard('b', 'deux', 'X'), makeCard('c', 'trois', 'X')];
-    const question = generateQuestion(sameDef, sameDef[0]);
+    const question = generateQuestion(sameDef, sameDef[0], { direction: 'term-to-def' });
+    expect(question.type).toBe('written');
+  });
+
+  it('falls back to written when the answer side has only one distinct value (def→term)', () => {
+    const sameTerm = [makeCard('a', 'X', 'un'), makeCard('b', 'X', 'deux'), makeCard('c', 'X', 'trois')];
+    const question = generateQuestion(sameTerm, sameTerm[0], { direction: 'def-to-term' });
     expect(question.type).toBe('written');
   });
 
   it('forces written questions once a card is well mastered (Quizlet-like progression)', () => {
     const question = generateQuestion(PREPOSITIONS, PREPOSITIONS[0], { preferWritten: true });
     expect(question.type).toBe('written');
+  });
+
+  it('respects an explicit direction instead of picking randomly', () => {
+    const q1 = generateQuestion(PREPOSITIONS, PREPOSITIONS[0], { direction: 'term-to-def' });
+    const q2 = generateQuestion(PREPOSITIONS, PREPOSITIONS[0], { direction: 'def-to-term' });
+    expect(q1.direction).toBe('term-to-def');
+    expect(q2.direction).toBe('def-to-term');
   });
 });

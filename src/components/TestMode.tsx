@@ -157,8 +157,10 @@ export default function TestMode({ cards, onBack }: TestModeProps) {
           {session.map((q, i) =>
             answers[i] && !answers[i].correct ? (
               <div key={i} className="rounded-lg border border-destructive/30 bg-destructive/5 p-3 text-sm">
-                <p className="font-medium">{q.card.term}</p>
-                <p className="text-muted-foreground">Attendu : {q.card.definition}</p>
+                <p className="font-medium">{q.direction === 'term-to-def' ? q.card.term : q.card.definition}</p>
+                <p className="text-muted-foreground">
+                  Attendu : {q.direction === 'term-to-def' ? q.card.definition : q.card.term}
+                </p>
               </div>
             ) : null
           )}
@@ -196,10 +198,14 @@ export default function TestMode({ cards, onBack }: TestModeProps) {
           return (
             <div key={i} className="rounded-2xl border bg-card p-5 shadow-sm">
               <div className="mb-3 flex items-center justify-between">
-                <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Terme</span>
+                <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                  {question.direction === 'term-to-def' ? 'Terme' : 'Définition'}
+                </span>
                 <span className="text-xs text-muted-foreground">{i + 1} sur {session.length}</span>
               </div>
-              <p className="mb-4 text-lg font-semibold">{question.card.term}</p>
+              <p className="mb-4 text-lg font-semibold">
+                {question.direction === 'term-to-def' ? question.card.term : question.card.definition}
+              </p>
 
               {question.type === 'qcm' && (
                 <div className="grid gap-2 sm:grid-cols-2">
@@ -229,7 +235,7 @@ export default function TestMode({ cards, onBack }: TestModeProps) {
 
               {question.type === 'truefalse' && (
                 <div className="space-y-2">
-                  <p className="rounded-lg border bg-muted/40 p-3 text-sm">{question.shownDefinition}</p>
+                  <p className="rounded-lg border bg-muted/40 p-3 text-sm">{question.shownAnswer}</p>
                   <div className="grid grid-cols-2 gap-2">
                     <button
                       type="button"
@@ -267,7 +273,7 @@ export default function TestMode({ cards, onBack }: TestModeProps) {
                     value={writtenDrafts[i] ?? ''}
                     onChange={(e) => setWrittenDrafts((prev) => ({ ...prev, [i]: e.target.value }))}
                     disabled={!!answered}
-                    placeholder="Écris la définition..."
+                    placeholder={question.direction === 'term-to-def' ? 'Écris la définition...' : 'Écris le terme...'}
                   />
                   {!answered && (
                     <Button type="submit" size="sm" disabled={!(writtenDrafts[i] ?? '').trim()}>
@@ -279,7 +285,9 @@ export default function TestMode({ cards, onBack }: TestModeProps) {
               )}
 
               {answered && !answered.correct && question.type !== 'qcm' && question.type !== 'truefalse' && (
-                <p className="mt-2 text-sm text-destructive">Réponse attendue : {question.card.definition}</p>
+                <p className="mt-2 text-sm text-destructive">
+                  Réponse attendue : {question.direction === 'term-to-def' ? question.card.definition : question.card.term}
+                </p>
               )}
             </div>
           );

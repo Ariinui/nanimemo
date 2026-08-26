@@ -159,9 +159,6 @@ export default function SetEditor({ set, userId, onBack }: SetEditorProps) {
           onClick={() => setMode('cards')}
           className="group mb-6 flex w-full items-center gap-4 rounded-2xl border bg-card p-5 text-left shadow-sm transition-colors hover:border-primary/40 hover:bg-accent"
         >
-          {cards[0].image_url && (
-            <img src={cards[0].image_url} alt="" className="h-16 w-16 shrink-0 rounded-lg object-cover" />
-          )}
           <div className="min-w-0 flex-1">
             <p className="truncate text-lg font-semibold">{cards[0].term}</p>
             <p className="truncate text-sm text-muted-foreground">{cards[0].definition}</p>

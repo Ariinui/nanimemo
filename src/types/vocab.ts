@@ -36,9 +36,17 @@ export type StudyMode = 'cards' | 'learn' | 'test' | 'match';
 
 export type QuestionType = 'qcm' | 'written' | 'truefalse';
 
+/**
+ * Comme Quizlet : la question interroge parfois terme→définition,
+ * parfois définition→terme (ex: montrer une image/phrase et demander
+ * le mot, plutôt que l'inverse).
+ */
+export type QuestionDirection = 'term-to-def' | 'def-to-term';
+
 export interface QcmQuestion {
   type: 'qcm';
   card: VocabCard;
+  direction: QuestionDirection;
   choices: string[];
   correctIndex: number;
 }
@@ -46,12 +54,14 @@ export interface QcmQuestion {
 export interface WrittenQuestion {
   type: 'written';
   card: VocabCard;
+  direction: QuestionDirection;
 }
 
 export interface TrueFalseQuestion {
   type: 'truefalse';
   card: VocabCard;
-  shownDefinition: string;
+  direction: QuestionDirection;
+  shownAnswer: string;
   isCorrect: boolean;
 }
 

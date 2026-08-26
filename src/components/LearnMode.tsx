@@ -154,8 +154,12 @@ export default function LearnMode({ cards, userId, onBack }: LearnModeProps) {
       </div>
 
       <div className="rounded-2xl border bg-card p-8 text-center shadow-sm">
-        <p className="mb-1 text-xs uppercase tracking-wide text-muted-foreground">Terme</p>
-        <p className="text-2xl font-semibold">{currentCard.term}</p>
+        <p className="mb-1 text-xs uppercase tracking-wide text-muted-foreground">
+          {question.direction === 'term-to-def' ? 'Terme' : 'Définition'}
+        </p>
+        <p className="text-2xl font-semibold">
+          {question.direction === 'term-to-def' ? currentCard.term : currentCard.definition}
+        </p>
       </div>
 
       {question.type === 'qcm' && (
@@ -186,7 +190,7 @@ export default function LearnMode({ cards, userId, onBack }: LearnModeProps) {
 
       {question.type === 'truefalse' && (
         <div className="space-y-3">
-          <p className="rounded-xl border bg-muted/40 p-4 text-center">{question.shownDefinition}</p>
+          <p className="rounded-xl border bg-muted/40 p-4 text-center">{question.shownAnswer}</p>
           <div className="grid grid-cols-2 gap-3">
             <Button
               variant="outline"
@@ -214,11 +218,13 @@ export default function LearnMode({ cards, userId, onBack }: LearnModeProps) {
             autoFocus
             value={writtenAnswer}
             onChange={(e) => setWrittenAnswer(e.target.value)}
-            placeholder="Écris la définition..."
+            placeholder={question.direction === 'term-to-def' ? 'Écris la définition...' : 'Écris le terme...'}
             disabled={feedback !== null}
           />
           {feedback === 'wrong' && (
-            <p className="text-sm text-destructive">Réponse attendue : {question.card.definition}</p>
+            <p className="text-sm text-destructive">
+              Réponse attendue : {question.direction === 'term-to-def' ? question.card.definition : question.card.term}
+            </p>
           )}
           <Button type="submit" className="w-full" disabled={feedback !== null || !writtenAnswer.trim()}>
             Valider

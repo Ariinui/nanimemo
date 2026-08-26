@@ -5,6 +5,7 @@ import type {
   WrittenQuestion,
   TrueFalseQuestion,
   QuestionType,
+  QuestionDirection,
 } from '@/types/vocab';
 
 export function shuffle<T>(arr: T[]): T[] {
@@ -16,59 +17,70 @@ export function shuffle<T>(arr: T[]): T[] {
   return copy;
 }
 
-function pickDistinctDefinitions(
+/** Le côté de la carte qui sert de réponse pour cette direction. */
+function answerSide(direction: QuestionDirection): 'term' | 'definition' {
+  return direction === 'term-to-def' ? 'definition' : 'term';
+}
+
+export function randomDirection(): QuestionDirection {
+  return Math.random() < 0.5 ? 'term-to-def' : 'def-to-term';
+}
+
+function pickDistinctValues(
   cards: VocabCard[],
-  excludeDefinition: string,
+  side: 'term' | 'definition',
+  exclude: string,
   count: number
 ): string[] {
-  const uniqueDefs = Array.from(
-    new Set(
-      cards
-        .map((c) => c.definition)
-        .filter((def) => def !== excludeDefinition)
-    )
-  );
-  return shuffle(uniqueDefs).slice(0, count);
+  const unique = Array.from(new Set(cards.map((c) => c[side]).filter((v) => v !== exclude)));
+  return shuffle(unique).slice(0, count);
 }
 
 /**
  * Un set peut avoir plusieurs cartes partageant la même définition
  * (ex: 7 prépositions de "LIEU"). Un QCM n'est généré que s'il existe
- * assez de définitions distinctes pour éviter plusieurs bonnes réponses.
+ * assez de valeurs distinctes du côté réponse pour éviter plusieurs
+ * bonnes réponses simultanées.
  */
 export function tryGenerateQcm(
   allCards: VocabCard[],
   targetCard: VocabCard,
+  direction: QuestionDirection,
   numChoices = 4
 ): QcmQuestion | null {
-  const distractors = pickDistinctDefinitions(allCards, targetCard.definition, numChoices - 1);
+  const side = answerSide(direction);
+  const correctAnswer = targetCard[side];
+  const distractors = pickDistinctValues(allCards, side, correctAnswer, numChoices - 1);
   if (distractors.length < numChoices - 1) return null;
 
-  const choices = shuffle([targetCard.definition, ...distractors]);
-  const correctIndex = choices.indexOf(targetCard.definition);
+  const choices = shuffle([correctAnswer, ...distractors]);
+  const correctIndex = choices.indexOf(correctAnswer);
 
-  return { type: 'qcm', card: targetCard, choices, correctIndex };
+  return { type: 'qcm', card: targetCard, direction, choices, correctIndex };
 }
 
 export function generateTrueFalse(
   allCards: VocabCard[],
-  targetCard: VocabCard
+  targetCard: VocabCard,
+  direction: QuestionDirection
 ): TrueFalseQuestion {
+  const side = answerSide(direction);
+  const correctAnswer = targetCard[side];
   const showCorrect = Math.random() < 0.5;
   if (showCorrect) {
-    return { type: 'truefalse', card: targetCard, shownDefinition: targetCard.definition, isCorrect: true };
+    return { type: 'truefalse', card: targetCard, direction, shownAnswer: correctAnswer, isCorrect: true };
   }
 
-  const alternatives = allCards.filter((c) => c.definition !== targetCard.definition);
+  const alternatives = allCards.filter((c) => c[side] !== correctAnswer);
   if (alternatives.length === 0) {
-    return { type: 'truefalse', card: targetCard, shownDefinition: targetCard.definition, isCorrect: true };
+    return { type: 'truefalse', card: targetCard, direction, shownAnswer: correctAnswer, isCorrect: true };
   }
   const wrong = alternatives[Math.floor(Math.random() * alternatives.length)];
-  return { type: 'truefalse', card: targetCard, shownDefinition: wrong.definition, isCorrect: false };
+  return { type: 'truefalse', card: targetCard, direction, shownAnswer: wrong[side], isCorrect: false };
 }
 
-export function generateWritten(targetCard: VocabCard): WrittenQuestion {
-  return { type: 'written', card: targetCard };
+export function generateWritten(targetCard: VocabCard, direction: QuestionDirection): WrittenQuestion {
+  return { type: 'written', card: targetCard, direction };
 }
 
 /**
@@ -78,21 +90,27 @@ export function generateWritten(targetCard: VocabCard): WrittenQuestion {
  * `preferWritten` reproduit le comportement Quizlet en mode Apprendre :
  * plus une carte est maîtrisée (box élevée), plus on demande à l'écrire
  * plutôt qu'à la reconnaître, pour tester le vrai rappel.
+ *
+ * La direction (terme→définition ou définition→terme) est tirée au
+ * sort par défaut, comme le "Les deux" de Quizlet.
  */
 export function generateQuestion(
   allCards: VocabCard[],
   targetCard: VocabCard,
-  opts?: { preferWritten?: boolean }
+  opts?: { preferWritten?: boolean; direction?: QuestionDirection }
 ): Question {
-  if (opts?.preferWritten) return generateWritten(targetCard);
+  const direction = opts?.direction ?? randomDirection();
 
-  const qcm = tryGenerateQcm(allCards, targetCard);
+  if (opts?.preferWritten) return generateWritten(targetCard, direction);
+
+  const qcm = tryGenerateQcm(allCards, targetCard, direction);
   if (qcm) return qcm;
 
-  const uniqueDefCount = new Set(allCards.map((c) => c.definition)).size;
-  if (uniqueDefCount <= 1) return generateWritten(targetCard);
+  const side = answerSide(direction);
+  const uniqueCount = new Set(allCards.map((c) => c[side])).size;
+  if (uniqueCount <= 1) return generateWritten(targetCard, direction);
 
-  return generateTrueFalse(allCards, targetCard);
+  return generateTrueFalse(allCards, targetCard, direction);
 }
 
 /**
@@ -103,16 +121,17 @@ export function generateQuestion(
 export function generateConfigurableQuestion(
   allCards: VocabCard[],
   targetCard: VocabCard,
-  allowedTypes: Set<QuestionType>
+  allowedTypes: Set<QuestionType>,
+  direction: QuestionDirection = randomDirection()
 ): Question {
   if (allowedTypes.has('qcm')) {
-    const qcm = tryGenerateQcm(allCards, targetCard);
+    const qcm = tryGenerateQcm(allCards, targetCard, direction);
     if (qcm) return qcm;
   }
   if (allowedTypes.has('truefalse')) {
-    return generateTrueFalse(allCards, targetCard);
+    return generateTrueFalse(allCards, targetCard, direction);
   }
-  return generateWritten(targetCard);
+  return generateWritten(targetCard, direction);
 }
 
 export function generateTestSession(
@@ -132,11 +151,13 @@ export function generateTestSession(
 
 export function isAnswerCorrect(question: Question, answer: string | boolean): boolean {
   if (question.type === 'qcm') {
-    return question.choices[Number(answer)] === question.card.definition;
+    const correctAnswer = question.card[answerSide(question.direction)];
+    return question.choices[Number(answer)] === correctAnswer;
   }
   if (question.type === 'truefalse') {
     return Boolean(answer) === question.isCorrect;
   }
+  const correctAnswer = question.card[answerSide(question.direction)];
   const normalized = (s: string) => s.trim().toLowerCase();
-  return normalized(String(answer)) === normalized(question.card.definition);
+  return normalized(String(answer)) === normalized(correctAnswer);
 }
