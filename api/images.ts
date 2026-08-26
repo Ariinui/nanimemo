@@ -25,7 +25,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   try {
     const response = await fetch(url);
     if (!response.ok) {
-      res.status(502).json({ error: 'Erreur Pixabay' });
+      const body = await response.text();
+      res.status(502).json({
+        error: 'Erreur Pixabay',
+        debug: {
+          keyLength: apiKey.length,
+          keyPreview: apiKey.slice(0, 3) + '...' + apiKey.slice(-3),
+          pixabayStatus: response.status,
+          pixabayBody: body.slice(0, 300),
+        },
+      });
       return;
     }
     const data = (await response.json()) as { hits: PixabayHit[] };
