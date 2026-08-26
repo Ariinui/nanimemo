@@ -1,5 +1,5 @@
-import { useMemo, useRef, useState } from 'react';
-import { ArrowLeft, ArrowRight, Shuffle, Star, X } from 'lucide-react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { ArrowLeft, ArrowRight, Check, Shuffle, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { shuffle } from '@/lib/quiz';
 import type { VocabCard } from '@/types/vocab';
@@ -13,13 +13,36 @@ export default function FlashcardMode({ cards, onBack }: FlashcardModeProps) {
   const [order, setOrder] = useState<VocabCard[]>(cards);
   const [index, setIndex] = useState(0);
   const [flipped, setFlipped] = useState(false);
-  const [starred, setStarred] = useState<Set<string>>(new Set());
+  const [known, setKnown] = useState<Set<string>>(new Set());
+  const [toReview, setToReview] = useState<Set<string>>(new Set());
 
   const current = order[index];
   const progressPct = useMemo(() => ((index + 1) / order.length) * 100, [index, order.length]);
 
   const touchStart = useRef<{ x: number; y: number } | null>(null);
   const didSwipe = useRef(false);
+
+  const goTo = (next: number) => {
+    setIndex(Math.max(0, Math.min(order.length - 1, next)));
+    setFlipped(false);
+  };
+
+  useEffect(() => {
+    const handleKey = (e: KeyboardEvent) => {
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
+      if (e.code === 'Space') {
+        e.preventDefault();
+        setFlipped((f) => !f);
+      } else if (e.code === 'ArrowRight') {
+        goTo(index + 1);
+      } else if (e.code === 'ArrowLeft') {
+        goTo(index - 1);
+      }
+    };
+    window.addEventListener('keydown', handleKey);
+    return () => window.removeEventListener('keydown', handleKey);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [index, order.length]);
 
   if (!current) {
     return (
@@ -30,24 +53,30 @@ export default function FlashcardMode({ cards, onBack }: FlashcardModeProps) {
     );
   }
 
-  const goTo = (next: number) => {
-    setIndex(Math.max(0, Math.min(order.length - 1, next)));
-    setFlipped(false);
-  };
-
-  const toggleStar = () => {
-    setStarred((prev) => {
-      const next = new Set(prev);
-      if (next.has(current.id)) next.delete(current.id);
-      else next.add(current.id);
-      return next;
-    });
-  };
-
   const handleShuffle = () => {
     setOrder(shuffle(cards));
     setIndex(0);
     setFlipped(false);
+  };
+
+  const markKnown = () => {
+    setKnown((prev) => new Set(prev).add(current.id));
+    setToReview((prev) => {
+      const next = new Set(prev);
+      next.delete(current.id);
+      return next;
+    });
+    goTo(index + 1);
+  };
+
+  const markToReview = () => {
+    setToReview((prev) => new Set(prev).add(current.id));
+    setKnown((prev) => {
+      const next = new Set(prev);
+      next.delete(current.id);
+      return next;
+    });
+    goTo(index + 1);
   };
 
   const handleTouchStart = (e: React.TouchEvent) => {
@@ -85,7 +114,6 @@ export default function FlashcardMode({ cards, onBack }: FlashcardModeProps) {
           <X className="h-4 w-4" />
           Fermer
         </Button>
-        <span className="text-sm text-muted-foreground">{index + 1} / {order.length}</span>
         <Button variant="ghost" size="sm" onClick={handleShuffle}>
           <Shuffle className="h-4 w-4" />
           Mélanger
@@ -115,23 +143,37 @@ export default function FlashcardMode({ cards, onBack }: FlashcardModeProps) {
             {flipped ? current.definition : current.term}
           </p>
           <p className="text-xs text-muted-foreground">
-            {flipped ? 'Définition' : 'Terme'} · toucher pour retourner · balayer pour naviguer
+            {flipped ? 'Définition' : 'Terme'} · barre d'espace ou toucher pour retourner
           </p>
         </div>
       </button>
 
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between gap-2">
         <Button variant="outline" size="icon" onClick={() => goTo(index - 1)} disabled={index === 0}>
           <ArrowLeft className="h-4 w-4" />
         </Button>
 
-        <Button
-          variant={starred.has(current.id) ? 'default' : 'outline'}
-          size="icon"
-          onClick={toggleStar}
-        >
-          <Star className="h-4 w-4" fill={starred.has(current.id) ? 'currentColor' : 'none'} />
-        </Button>
+        <div className="flex flex-1 items-center justify-center gap-3">
+          <Button
+            variant="outline"
+            size="icon"
+            className="rounded-full border-destructive/40 text-destructive hover:bg-destructive/10"
+            onClick={markToReview}
+            title="À revoir"
+          >
+            <X className="h-4 w-4" />
+          </Button>
+          <span className="min-w-14 text-center text-sm text-muted-foreground">{index + 1} / {order.length}</span>
+          <Button
+            variant="outline"
+            size="icon"
+            className="rounded-full border-success/40 text-success hover:bg-success/10"
+            onClick={markKnown}
+            title="Su"
+          >
+            <Check className="h-4 w-4" />
+          </Button>
+        </div>
 
         <Button
           variant="outline"
@@ -143,9 +185,9 @@ export default function FlashcardMode({ cards, onBack }: FlashcardModeProps) {
         </Button>
       </div>
 
-      {starred.size > 0 && (
+      {(known.size > 0 || toReview.size > 0) && (
         <p className="text-center text-xs text-muted-foreground">
-          {starred.size} carte{starred.size !== 1 ? 's' : ''} marquée{starred.size !== 1 ? 's' : ''} à revoir
+          {known.size} su{known.size !== 1 ? 's' : ''} · {toReview.size} à revoir
         </p>
       )}
     </div>

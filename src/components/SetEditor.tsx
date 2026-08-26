@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { ArrowLeft, Brain, FileCheck2, ImagePlus, Layers, LoaderCircle, Plus, Shuffle, Trash2 } from 'lucide-react';
+import { ArrowLeft, Brain, ChevronDown, FileCheck2, ImagePlus, Layers, LoaderCircle, Plus, Shuffle, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import ImportDialog from '@/components/ImportDialog';
@@ -39,6 +39,7 @@ export default function SetEditor({ set, userId, onBack }: SetEditorProps) {
   const [cards, setCards] = useState<VocabCard[]>([]);
   const [loading, setLoading] = useState(true);
   const [importOpen, setImportOpen] = useState(false);
+  const [showTerms, setShowTerms] = useState(false);
   const [mode, setMode] = useState<StudyMode | null>(null);
   const [imageSearchCardId, setImageSearchCardId] = useState<string | null>(null);
   const [imageResults, setImageResults] = useState<PixabayImage[]>([]);
@@ -186,8 +187,20 @@ export default function SetEditor({ set, userId, onBack }: SetEditorProps) {
         ))}
       </div>
 
-      <div className="mb-4 flex items-center justify-between">
-        <h2 className="text-sm font-medium text-muted-foreground">Termes dans ce set</h2>
+      <button
+        type="button"
+        onClick={() => setShowTerms((v) => !v)}
+        className="mb-4 flex w-full items-center justify-between rounded-lg py-2 text-left"
+      >
+        <h2 className="text-sm font-medium text-muted-foreground">
+          Termes dans ce set <span className="text-xs">({cards.length})</span>
+        </h2>
+        <ChevronDown className={`h-4 w-4 text-muted-foreground transition-transform ${showTerms ? 'rotate-180' : ''}`} />
+      </button>
+
+      {showTerms && (
+      <>
+      <div className="mb-4 flex justify-end">
         <Button size="sm" onClick={() => setImportOpen(true)}>
           <Plus className="h-4 w-4" />
           Importer
@@ -233,6 +246,8 @@ export default function SetEditor({ set, userId, onBack }: SetEditorProps) {
             </div>
           ))}
         </div>
+      )}
+      </>
       )}
 
       <ImportDialog open={importOpen} onOpenChange={setImportOpen} onImport={handleImport} />
