@@ -26,15 +26,22 @@ interface ImportDialogProps {
   onImport: (cards: { term: string; definition: string }[]) => void;
 }
 
+interface RowEdit {
+  term: string;
+  definition: string;
+}
+
 export default function ImportDialog({ open, onOpenChange, onImport }: ImportDialogProps) {
   const [text, setText] = useState('');
   const [settings, setSettings] = useState<ImportSettings>(DEFAULT_IMPORT_SETTINGS);
   const [autoDetect, setAutoDetect] = useState(true);
+  const [edits, setEdits] = useState<Record<number, RowEdit>>({});
 
   const result = useMemo(() => parseImport(text, settings), [text, settings]);
 
   const handleTextChange = (value: string) => {
     setText(value);
+    setEdits({});
     if (autoDetect && value.trim()) {
       setSettings(detectImportSettings(value));
     }
@@ -42,19 +49,30 @@ export default function ImportDialog({ open, onOpenChange, onImport }: ImportDia
 
   const updateSettings = (patch: Partial<ImportSettings>) => {
     setAutoDetect(false);
+    setEdits({});
     setSettings((prev) => ({ ...prev, ...patch }));
+  };
+
+  const editRow = (index: number, patch: Partial<RowEdit>, fallback: RowEdit) => {
+    setEdits((prev) => ({ ...prev, [index]: { ...fallback, ...prev[index], ...patch } }));
   };
 
   const reset = () => {
     setText('');
     setSettings(DEFAULT_IMPORT_SETTINGS);
     setAutoDetect(true);
+    setEdits({});
   };
 
   const handleImport = () => {
     const cards = result.rows
-      .filter((r) => r.status === 'valid')
-      .map((r) => ({ term: r.term, definition: r.definition }));
+      .map((r, i) => ({ row: r, edit: edits[i] }))
+      .filter(({ row }) => row.status === 'valid')
+      .map(({ row, edit }) => ({
+        term: (edit?.term ?? row.term).trim(),
+        definition: (edit?.definition ?? row.definition).trim(),
+      }))
+      .filter((c) => c.term && c.definition);
     onImport(cards);
     reset();
     onOpenChange(false);
@@ -153,39 +171,60 @@ export default function ImportDialog({ open, onOpenChange, onImport }: ImportDia
               Rien à visualiser pour l'instant
             </p>
           ) : (
-            <div className="max-h-52 space-y-1 overflow-y-auto rounded-md border p-2">
-              {result.rows.map((row, i) => (
-                <div
-                  key={i}
-                  className={`flex items-center gap-2 rounded px-2 py-1.5 text-sm ${
-                    row.status !== 'valid'
-                      ? 'bg-destructive/10 text-destructive'
-                      : row.duplicate
-                        ? 'bg-amber-500/10'
-                        : ''
-                  }`}
-                >
-                  {row.status !== 'valid' && <AlertTriangle className="h-3.5 w-3.5 shrink-0" />}
-                  {row.status === 'valid' ? (
-                    <>
-                      <span className="flex-1 truncate font-medium">{row.term}</span>
-                      <span className="flex-1 truncate text-muted-foreground">{row.definition}</span>
-                      {row.duplicate && <span className="text-xs">doublon</span>}
-                    </>
-                  ) : (
-                    <span className="flex-1 truncate">
-                      {row.raw}{' '}
-                      <span className="text-xs opacity-70">
-                        (
-                        {row.status === 'no-separator' && 'aucun séparateur trouvé'}
-                        {row.status === 'multiple-separators' && 'plusieurs séparateurs trouvés'}
-                        {row.status === 'empty-field' && 'terme ou définition vide'}
-                        )
+            <div className="max-h-72 space-y-2 overflow-y-auto pr-1">
+              {result.rows.map((row, i) => {
+                if (row.status !== 'valid') {
+                  return (
+                    <div
+                      key={i}
+                      className="flex items-center gap-2 rounded-lg bg-destructive/10 px-3 py-2 text-sm text-destructive"
+                    >
+                      <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
+                      <span className="flex-1 truncate">
+                        {row.raw}{' '}
+                        <span className="text-xs opacity-70">
+                          (
+                          {row.status === 'no-separator' && 'aucun séparateur trouvé'}
+                          {row.status === 'multiple-separators' && 'plusieurs séparateurs trouvés'}
+                          {row.status === 'empty-field' && 'terme ou définition vide'}
+                          )
+                        </span>
                       </span>
-                    </span>
-                  )}
-                </div>
-              ))}
+                    </div>
+                  );
+                }
+
+                const current = { term: edits[i]?.term ?? row.term, definition: edits[i]?.definition ?? row.definition };
+
+                return (
+                  <div
+                    key={i}
+                    className={`flex items-start gap-3 rounded-lg border p-3 ${row.duplicate ? 'border-amber-500/40' : ''}`}
+                  >
+                    <span className="mt-2 shrink-0 text-xs font-medium text-muted-foreground">{i + 1}</span>
+                    <div className="grid flex-1 grid-cols-2 gap-2">
+                      <div>
+                        <Input
+                          value={current.term}
+                          onChange={(e) => editRow(i, { term: e.target.value }, current)}
+                          className="h-9"
+                        />
+                        <p className="mt-1 text-[10px] uppercase tracking-wide text-muted-foreground">Terme</p>
+                      </div>
+                      <div>
+                        <Input
+                          value={current.definition}
+                          onChange={(e) => editRow(i, { definition: e.target.value }, current)}
+                          className="h-9"
+                        />
+                        <p className="mt-1 text-[10px] uppercase tracking-wide text-muted-foreground">
+                          Définition{row.duplicate && ' · doublon'}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           )}
         </div>
