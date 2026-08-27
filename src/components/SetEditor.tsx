@@ -177,22 +177,6 @@ export default function SetEditor({ set, userId, onBack }: SetEditorProps) {
         </Button>
       </div>
 
-      {cards.length > 0 && (
-        <button
-          type="button"
-          onClick={() => setMode('cards')}
-          className="group mb-6 flex w-full items-center gap-4 rounded-2xl border bg-card p-5 text-left shadow-sm transition-colors hover:border-primary/40 hover:bg-accent"
-        >
-          <div className="min-w-0 flex-1">
-            <p className="truncate text-lg font-semibold">{cards[0].term}</p>
-            <p className="truncate text-sm text-muted-foreground">{cards[0].definition}</p>
-          </div>
-          <span className="shrink-0 text-xs font-medium text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100">
-            Étudier →
-          </span>
-        </button>
-      )}
-
       <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-5">
         {MODE_BUTTONS.map(({ mode: m, label, icon: Icon, colorClass }) => (
           <Button
