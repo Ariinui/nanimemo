@@ -93,13 +93,26 @@ export default function SetEditor({ set, userId, onBack }: SetEditorProps) {
     setImageError('');
     setImageLoading(true);
     try {
-      const res = await fetch(`/api/images?q=${encodeURIComponent(card.term)}`);
-      const data = await res.json();
-      if (!res.ok) {
-        setImageError(data.error ?? 'Recherche indisponible.');
-      } else {
-        setImageResults(data.images ?? []);
+      const apiKey = import.meta.env.VITE_PIXABAY_API_KEY as string | undefined;
+      if (!apiKey) {
+        setImageError('Pixabay non configuré (VITE_PIXABAY_API_KEY manquante).');
+        return;
       }
+      const url = `https://pixabay.com/api/?key=${apiKey}&q=${encodeURIComponent(card.term)}&image_type=photo&safesearch=true&per_page=12`;
+      const res = await fetch(url);
+      if (!res.ok) {
+        setImageError('Erreur Pixabay.');
+        return;
+      }
+      const data = (await res.json()) as { hits?: { id: number; previewURL: string; webformatURL: string; tags: string }[] };
+      setImageResults(
+        (data.hits ?? []).map((hit) => ({
+          id: hit.id,
+          previewUrl: hit.previewURL,
+          fullUrl: hit.webformatURL,
+          tags: hit.tags,
+        })),
+      );
     } catch {
       setImageError('Impossible de contacter Pixabay.');
     } finally {
