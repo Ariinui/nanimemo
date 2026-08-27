@@ -13,12 +13,16 @@ import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   DEFAULT_IMPORT_SETTINGS,
   detectImportSettings,
   parseImport,
   type ImportSettings,
 } from '@/lib/import';
+import { parseCloze } from '@/lib/cloze';
+
+type ImportMode = 'pairs' | 'cloze';
 
 interface ImportDialogProps {
   open: boolean;
@@ -32,17 +36,26 @@ interface RowEdit {
 }
 
 export default function ImportDialog({ open, onOpenChange, onImport }: ImportDialogProps) {
+  const [mode, setMode] = useState<ImportMode>('pairs');
   const [text, setText] = useState('');
   const [settings, setSettings] = useState<ImportSettings>(DEFAULT_IMPORT_SETTINGS);
   const [autoDetect, setAutoDetect] = useState(true);
   const [edits, setEdits] = useState<Record<number, RowEdit>>({});
 
-  const result = useMemo(() => parseImport(text, settings), [text, settings]);
+  const result = useMemo(
+    () => (mode === 'cloze' ? parseCloze(text) : parseImport(text, settings)),
+    [mode, text, settings],
+  );
+
+  const handleModeChange = (value: ImportMode) => {
+    setMode(value);
+    setEdits({});
+  };
 
   const handleTextChange = (value: string) => {
     setText(value);
     setEdits({});
-    if (autoDetect && value.trim()) {
+    if (mode === 'pairs' && autoDetect && value.trim()) {
       setSettings(detectImportSettings(value));
     }
   };
@@ -87,17 +100,31 @@ export default function ImportDialog({ open, onOpenChange, onImport }: ImportDia
             Importer vos données
           </DialogTitle>
           <DialogDescription>
-            Copiez et collez vos données ici (à partir de Word, Excel, Google Docs, etc.)
+            {mode === 'pairs'
+              ? 'Copiez et collez vos données ici (à partir de Word, Excel, Google Docs, etc.)'
+              : 'Collez un texte : chaque phrase devient une carte, avec son mot le plus long caché.'}
           </DialogDescription>
         </DialogHeader>
+
+        <Tabs value={mode} onValueChange={(v) => handleModeChange(v as ImportMode)}>
+          <TabsList>
+            <TabsTrigger value="pairs">Paires terme/définition</TabsTrigger>
+            <TabsTrigger value="cloze">Texte (phrases à trous)</TabsTrigger>
+          </TabsList>
+        </Tabs>
 
         <Textarea
           value={text}
           onChange={(e) => handleTextChange(e.target.value)}
-          placeholder={'Mot 1\tDéfinition 1\nMot 2\tDéfinition 2\nMot 3\tDéfinition 3'}
+          placeholder={
+            mode === 'pairs'
+              ? 'Mot 1\tDéfinition 1\nMot 2\tDéfinition 2\nMot 3\tDéfinition 3'
+              : 'Collez ici un texte suivi (plusieurs phrases). Chaque phrase devient une carte.'
+          }
           className="min-h-40 font-mono text-sm"
         />
 
+        {mode === 'pairs' && (
         <div className="grid grid-cols-2 gap-6">
           <div>
             <p className="mb-2 text-sm font-medium">Entre le terme et la définition</p>
@@ -155,6 +182,7 @@ export default function ImportDialog({ open, onOpenChange, onImport }: ImportDia
             </RadioGroup>
           </div>
         </div>
+        )}
 
         <div>
           <div className="mb-2 flex items-center justify-between">
@@ -187,6 +215,7 @@ export default function ImportDialog({ open, onOpenChange, onImport }: ImportDia
                           {row.status === 'no-separator' && 'aucun séparateur trouvé'}
                           {row.status === 'multiple-separators' && 'plusieurs séparateurs trouvés'}
                           {row.status === 'empty-field' && 'terme ou définition vide'}
+                          {row.status === 'no-word' && 'aucun mot assez long à cacher'}
                           )
                         </span>
                       </span>

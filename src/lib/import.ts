@@ -15,7 +15,7 @@ export const DEFAULT_IMPORT_SETTINGS: ImportSettings = {
   cardCustom: ';',
 };
 
-export type RowStatus = 'valid' | 'no-separator' | 'multiple-separators' | 'empty-field';
+export type RowStatus = 'valid' | 'no-separator' | 'multiple-separators' | 'empty-field' | 'no-word';
 
 export interface ParsedRow {
   raw: string;
