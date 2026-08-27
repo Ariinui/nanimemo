@@ -1,8 +1,10 @@
 {
+  "id": "/nanimemo/",
   "name": "nanimemo",
   "short_name": "nanimemo",
   "description": "Cartes mémo : import, apprentissage et tests",
   "start_url": "./",
+  "scope": "./",
   "display": "standalone",
   "background_color": "#062a4a",
   "theme_color": "#0d3b5c",
