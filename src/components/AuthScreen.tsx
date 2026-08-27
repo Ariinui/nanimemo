@@ -133,7 +133,7 @@ export default function AuthScreen({ onEnter }: AuthScreenProps) {
           {!isConfigured && (
             <div className="rounded-2xl border border-amber-300/20 bg-amber-300/10 px-4 py-3 text-sm text-amber-100">
               Ajoutez `VITE_SUPABASE_URL` et `VITE_SUPABASE_PUBLISHABLE_KEY` dans `.env.local`,
-              puis dans Vercel.
+              puis dans les secrets GitHub Actions du repo.
             </div>
           )}
 
