@@ -7,7 +7,7 @@ const WORD_RE = /[\p{L}ʻ'’-]+/gu;
 function splitSentences(text: string): string[] {
   return text
     .replace(/\s+/g, ' ')
-    .split(/(?<=[.!?])\s+/)
+    .split(/(?<=[.!?;])\s+/)
     .map((s) => s.trim())
     .filter((s) => s.length > 0);
 }

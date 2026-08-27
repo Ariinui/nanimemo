@@ -42,4 +42,10 @@ describe('parseCloze', () => {
     const result = parseCloze('   ');
     expect(result.rows.length).toBe(0);
   });
+
+  it('also splits on semicolons, for long compound sentences', () => {
+    const text = 'Ua haere oia i te fare rahi ; ua parauapî atu ra oia i te taata.';
+    const result = parseCloze(text);
+    expect(result.rows.length).toBe(2);
+  });
 });
