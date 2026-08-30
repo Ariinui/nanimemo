@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { LoaderCircle, LogOut, Plus } from 'lucide-react';
+import { ArrowLeft, BookOpen, LoaderCircle, LogOut, Plus } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -13,12 +13,25 @@ import {
 import { createSet, fetchSets } from '@/lib/vocabApi';
 import type { VocabSet } from '@/types/vocab';
 
+const TAHITIEN_LESSON_PREFIX = 'Le Parler Tahitien — Leçon ';
+
+function tahitienLessonNumber(title: string): number {
+  return parseInt(title.slice(TAHITIEN_LESSON_PREFIX.length), 10);
+}
+
 interface HomeProps {
   userId: string;
   onOpenSet: (set: VocabSet) => void;
+  tahitienFolderOpen: boolean;
+  onTahitienFolderOpenChange: (open: boolean) => void;
 }
 
-export default function Home({ userId, onOpenSet }: HomeProps) {
+export default function Home({
+  userId,
+  onOpenSet,
+  tahitienFolderOpen,
+  onTahitienFolderOpenChange,
+}: HomeProps) {
   const [sets, setSets] = useState<VocabSet[]>([]);
   const [loading, setLoading] = useState(true);
   const [createOpen, setCreateOpen] = useState(false);
@@ -63,6 +76,37 @@ export default function Home({ userId, onOpenSet }: HomeProps) {
     window.location.reload();
   };
 
+  const tahitienSets = sets
+    .filter((s) => s.title.startsWith(TAHITIEN_LESSON_PREFIX))
+    .sort((a, b) => tahitienLessonNumber(a.title) - tahitienLessonNumber(b.title));
+  const otherSets = sets.filter((s) => !s.title.startsWith(TAHITIEN_LESSON_PREFIX));
+
+  if (tahitienFolderOpen) {
+    return (
+      <div className="mx-auto max-w-3xl px-4 py-6">
+        <div className="mb-6 flex items-center gap-3">
+          <Button variant="ghost" size="icon" onClick={() => onTahitienFolderOpenChange(false)}>
+            <ArrowLeft className="h-4 w-4" />
+          </Button>
+          <h1 className="text-2xl font-bold">Apprendre le tahitien</h1>
+        </div>
+        <div className="grid gap-3 sm:grid-cols-2">
+          {tahitienSets.map((set) => (
+            <button
+              key={set.id}
+              type="button"
+              onClick={() => onOpenSet(set)}
+              className="rounded-xl border bg-card p-4 text-left shadow-sm transition-colors hover:bg-accent"
+            >
+              <p className="font-semibold">{set.title}</p>
+              {set.description && <p className="mt-1 text-sm text-muted-foreground">{set.description}</p>}
+            </button>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="mx-auto max-w-3xl px-4 py-6">
       <div className="mb-6 flex items-center justify-between">
@@ -92,7 +136,20 @@ export default function Home({ userId, onOpenSet }: HomeProps) {
         </div>
       ) : (
         <div className="grid gap-3 sm:grid-cols-2">
-          {sets.map((set) => (
+          {tahitienSets.length > 0 && (
+            <button
+              type="button"
+              onClick={() => onTahitienFolderOpenChange(true)}
+              className="flex items-center gap-3 rounded-xl border bg-card p-4 text-left shadow-sm transition-colors hover:bg-accent"
+            >
+              <BookOpen className="h-5 w-5 shrink-0 text-muted-foreground" />
+              <div>
+                <p className="font-semibold">Apprendre le tahitien</p>
+                <p className="mt-1 text-sm text-muted-foreground">{tahitienSets.length} leçons</p>
+              </div>
+            </button>
+          )}
+          {otherSets.map((set) => (
             <button
               key={set.id}
               type="button"

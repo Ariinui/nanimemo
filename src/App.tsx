@@ -11,6 +11,7 @@ const ENTERED_KEY = 'nanimemo_entered';
 export default function App() {
   const [entered, setEntered] = useState(() => localStorage.getItem(ENTERED_KEY) === 'true');
   const [activeSet, setActiveSet] = useState<VocabSet | null>(null);
+  const [tahitienFolderOpen, setTahitienFolderOpen] = useState(false);
 
   const handleEnter = () => {
     localStorage.setItem(ENTERED_KEY, 'true');
@@ -35,7 +36,12 @@ export default function App() {
           onBack={() => setActiveSet(null)}
         />
       ) : (
-        <Home userId={FIXED_USER_ID} onOpenSet={setActiveSet} />
+        <Home
+          userId={FIXED_USER_ID}
+          onOpenSet={setActiveSet}
+          tahitienFolderOpen={tahitienFolderOpen}
+          onTahitienFolderOpenChange={setTahitienFolderOpen}
+        />
       )}
       <Toaster position="top-center" />
     </>
