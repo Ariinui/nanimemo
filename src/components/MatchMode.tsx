@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
-import { PartyPopper, RotateCcw, X } from 'lucide-react';
+import { PartyPopper, RotateCcw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import StudyTopBar from '@/components/study/StudyTopBar';
 import { shuffle } from '@/lib/quiz';
 import type { VocabCard } from '@/types/vocab';
 
@@ -124,17 +125,18 @@ export default function MatchMode({ cards, onBack }: MatchModeProps) {
   }
 
   return (
-    <div className="mx-auto flex max-w-2xl flex-col gap-4 px-4 py-6">
-      <div className="flex items-center justify-between">
-        <Button variant="ghost" className="h-11 px-3" onClick={onBack}>
-          <X className="h-4 w-4" />
-          Fermer
-        </Button>
-        <span className="text-sm font-semibold tabular-nums text-primary">{elapsed.toFixed(1)}s</span>
-      </div>
+    <div className="mx-auto flex w-full max-w-2xl flex-1 flex-col gap-2.5 px-3 pb-3 pt-1">
+      <StudyTopBar
+        onBack={onBack}
+        right={<span className="w-16 shrink-0 text-right text-base font-semibold tabular-nums text-primary">{elapsed.toFixed(1)}s</span>}
+      >
+        <p className="text-center text-sm font-medium text-muted-foreground">
+          {finished ? 'Terminé' : `${solved.size / 2} / ${pairTotal} paires`}
+        </p>
+      </StudyTopBar>
 
       {finished ? (
-        <div className="flex flex-col items-center gap-4 rounded-2xl border bg-card p-10 text-center shadow-sm">
+        <div className="anim-pop shadow-glow flex flex-1 flex-col items-center justify-center gap-4 rounded-3xl border bg-card p-8 text-center">
           <PartyPopper className="h-10 w-10 text-primary" />
           <p className="text-xl font-bold">
             {isNewBest ? 'Nouveau record !' : 'Terminé !'}
@@ -151,7 +153,7 @@ export default function MatchMode({ cards, onBack }: MatchModeProps) {
           </div>
         </div>
       ) : (
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+        <div className="grid min-h-0 flex-1 grid-cols-2 gap-2.5 [grid-auto-rows:minmax(0,1fr)] sm:grid-cols-3">
           {tiles.map((tile) => {
             const isSolved = solved.has(tile.key);
             const isSelected = selected === tile.key;
@@ -162,11 +164,11 @@ export default function MatchMode({ cards, onBack }: MatchModeProps) {
                 type="button"
                 disabled={isSolved}
                 onClick={() => handleTileClick(tile)}
-                className={`flex min-h-20 items-center justify-center rounded-xl border p-3 text-center text-sm font-semibold transition-all duration-300 select-none ${
+                className={`flex min-h-0 items-center justify-center overflow-hidden break-words rounded-2xl border px-2 py-1 text-center text-[13.5px] font-semibold leading-tight min-[400px]:text-base min-[400px]:leading-snug transition-all duration-300 select-none ${
                   isSolved
                     ? 'pointer-events-none border-transparent opacity-0'
                     : isSelected
-                      ? 'border-primary bg-primary/10 shadow-[0_0_20px_rgba(99,102,241,0.25)]'
+                      ? 'border-primary bg-primary/10 shadow-[0_0_20px_hsl(var(--primary)/0.3)]'
                       : 'border-border bg-card hover:border-primary/50 hover:bg-accent'
                 } ${isShaking ? 'animate-[shake_0.4s_ease] border-destructive' : ''}`}
               >
@@ -177,11 +179,6 @@ export default function MatchMode({ cards, onBack }: MatchModeProps) {
         </div>
       )}
 
-      {!finished && (
-        <p className="text-center text-xs text-muted-foreground">
-          {solved.size / 2} / {pairTotal} paires trouvées
-        </p>
-      )}
     </div>
   );
 }

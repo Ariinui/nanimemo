@@ -25,8 +25,8 @@ export default function LessonMode({ set, onBack, onLessonUpdated }: LessonModeP
   };
 
   return (
-    <div className="mx-auto flex max-w-2xl flex-col gap-4 px-4 py-4">
-      <div className="sticky top-0 z-10 -mx-4 flex items-center justify-between border-b bg-background/95 px-4 py-3 backdrop-blur">
+    <div className="mx-auto flex w-full max-w-2xl flex-1 flex-col gap-4 px-3 py-2">
+      <div className="sticky top-0 z-10 -mx-3 flex items-center justify-between border-b bg-background/95 px-3 py-1.5 backdrop-blur">
         <Button variant="ghost" className="h-11 px-3" onClick={onBack}>
           <X className="h-4 w-4" />
           Fermer

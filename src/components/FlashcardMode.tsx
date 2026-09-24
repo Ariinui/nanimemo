@@ -1,8 +1,10 @@
 import { useEffect, useRef, useState } from 'react';
-import { ArrowLeft, ArrowRight, Shuffle, X } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Shuffle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import StatsBar from '@/components/study/StatsBar';
+import StudyTopBar from '@/components/study/StudyTopBar';
 import StudyProgress from '@/components/study/StudyProgress';
+import { fitTextClass } from '@/lib/fitText';
 import { shuffle } from '@/lib/quiz';
 import { fetchProgress, upsertProgress } from '@/lib/vocabApi';
 import type { MasteryBox, VocabCard, VocabProgress } from '@/types/vocab';
@@ -160,21 +162,19 @@ export default function FlashcardMode({ cards, userId, onBack }: FlashcardModePr
   };
 
   return (
-    <div className="mx-auto flex max-w-2xl flex-col gap-4 px-4 py-4">
-      <div className="flex items-center justify-between">
-        <Button variant="ghost" className="h-11 px-3" onClick={onBack}>
-          <X className="h-4 w-4" />
-          Fermer
-        </Button>
-        <Button variant="ghost" className="h-11 px-3" onClick={handleShuffle}>
-          <Shuffle className="h-4 w-4" />
-          Mélanger
-        </Button>
-      </div>
+    <div className="mx-auto flex w-full max-w-2xl flex-1 flex-col gap-2.5 px-3 pb-3 pt-1">
+      <StudyTopBar
+        onBack={onBack}
+        right={
+          <Button variant="ghost" size="icon" className="h-11 w-11 shrink-0 rounded-full" onClick={handleShuffle} aria-label="Mélanger" title="Mélanger">
+            <Shuffle className="h-5 w-5" />
+          </Button>
+        }
+      >
+        <StudyProgress label={`Carte ${index + 1} / ${order.length}`} current={index + 1} total={order.length} />
+      </StudyTopBar>
 
-      <StudyProgress label={`Carte ${index + 1} / ${order.length}`} current={index + 1} total={order.length} />
-
-      <div className="perspective-1000">
+      <div className="perspective-1000 flex min-h-44 flex-1">
         <button
           type="button"
           onClick={handleCardClick}
@@ -184,23 +184,23 @@ export default function FlashcardMode({ cards, userId, onBack }: FlashcardModePr
             flipped ? 'rotate-y-180' : ''
           }`}
         >
-          <div className="backface-hidden absolute inset-0 flex flex-col items-center justify-center gap-4 overflow-hidden rounded-3xl p-8">
+          <div className="backface-hidden absolute inset-0 flex flex-col items-center justify-center gap-4 overflow-hidden rounded-3xl px-5 py-12">
             <span className="absolute right-4 top-4 rounded-full border bg-secondary px-2.5 py-1 text-xs text-muted-foreground">
               ↻ Toucher pour retourner
             </span>
             {current.image_url && (
               <img src={current.image_url} alt="" className="max-h-40 rounded-lg object-contain" />
             )}
-            <p className="text-3xl font-bold leading-snug">{current.term}</p>
+            <p className={`${fitTextClass(current.term)} max-w-full break-words font-bold leading-snug`}>{current.term}</p>
             <span className="absolute bottom-4 rounded-full border bg-secondary px-3 py-1 text-xs font-medium text-muted-foreground">
               Terme
             </span>
           </div>
-          <div className="backface-hidden rotate-y-180 absolute inset-0 flex flex-col items-center justify-center gap-4 overflow-hidden rounded-3xl p-8">
+          <div className="backface-hidden rotate-y-180 absolute inset-0 flex flex-col items-center justify-center gap-4 overflow-hidden rounded-3xl px-5 py-12">
             <span className="absolute right-4 top-4 rounded-full border bg-secondary px-2.5 py-1 text-xs text-muted-foreground">
               ↻ Toucher pour retourner
             </span>
-            <p className="text-2xl font-semibold leading-snug">{current.definition}</p>
+            <p className={`${fitTextClass(current.definition)} max-w-full break-words font-semibold leading-snug`}>{current.definition}</p>
             <span className="absolute bottom-4 rounded-full border bg-secondary px-3 py-1 text-xs font-medium text-muted-foreground">
               Définition
             </span>
@@ -208,13 +208,13 @@ export default function FlashcardMode({ cards, userId, onBack }: FlashcardModePr
         </button>
       </div>
 
-      <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-4">
+      <div className="grid shrink-0 grid-cols-2 gap-2.5 sm:grid-cols-4">
         {RATINGS.map(({ rating, label, emoji, className }) => (
           <button
             key={rating}
             type="button"
             onClick={() => rate(rating)}
-            className={`flex items-center justify-center gap-2 rounded-xl border bg-card px-3 py-3 text-sm font-semibold text-muted-foreground transition-all hover:-translate-y-0.5 ${className}`}
+            className={`flex items-center justify-center gap-2 rounded-2xl border bg-card px-3 py-3 text-base font-semibold text-muted-foreground transition-all hover:-translate-y-0.5 ${className}`}
           >
             <span>{emoji}</span>
             {label}
@@ -222,7 +222,7 @@ export default function FlashcardMode({ cards, userId, onBack }: FlashcardModePr
         ))}
       </div>
 
-      <div className="flex items-center justify-center gap-4">
+      <div className="flex shrink-0 items-center justify-center gap-4 [@media(max-height:720px)]:hidden">
         <Button variant="outline" size="icon" className="rounded-full" onClick={() => goTo(index - 1)} disabled={index === 0}>
           <ArrowLeft className="h-4 w-4" />
         </Button>
@@ -237,7 +237,7 @@ export default function FlashcardMode({ cards, userId, onBack }: FlashcardModePr
         </Button>
       </div>
 
-      <StatsBar good={known.size} review={toReview.size} streak={streak} />
+      <div className="shrink-0"><StatsBar good={known.size} review={toReview.size} streak={streak} /></div>
     </div>
   );
 }

@@ -17,7 +17,7 @@ interface ModeTabsProps {
 
 export default function ModeTabs({ active, onChange, disabledModes = [] }: ModeTabsProps) {
   return (
-    <div className="mx-auto max-w-2xl px-4 pt-4">
+    <div className="mx-auto w-full max-w-2xl shrink-0 px-3 pt-2">
       <div className="flex gap-0.5 rounded-2xl border bg-card p-1">
         {MODE_TABS.map(({ mode, label, icon: Icon }) => {
           const isActive = mode === active;

@@ -153,13 +153,13 @@ export default function SetEditor({ set, userId, onBack }: SetEditorProps) {
   if (mode) {
     const close = () => setMode(null);
     return (
-      <div className="min-h-dvh">
+      <div className="flex flex-1 flex-col">
         <ModeTabs
           active={mode}
           onChange={setMode}
           disabledModes={cards.length === 0 ? MODE_BUTTONS.filter((b) => b.mode !== 'lesson').map((b) => b.mode) : []}
         />
-        <div key={mode} className="anim-fade-up">
+        <div key={mode} className="anim-fade-up flex flex-1 flex-col">
           {mode === 'cards' && <FlashcardMode cards={cards} userId={userId} onBack={close} />}
           {mode === 'learn' && <LearnMode cards={cards} userId={userId} onBack={close} />}
           {mode === 'match' && <MatchMode cards={cards} onBack={close} />}
@@ -173,7 +173,7 @@ export default function SetEditor({ set, userId, onBack }: SetEditorProps) {
   }
 
   return (
-    <div className="mx-auto max-w-3xl px-4 py-6">
+    <div className="mx-auto w-full max-w-3xl px-3 py-5">
       <div className="mb-6 flex items-center gap-3">
         <Button variant="ghost" size="icon" onClick={onBack}>
           <ArrowLeft className="h-4 w-4" />

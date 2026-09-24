@@ -78,7 +78,7 @@ export default function Home({
 
   if (tahitienFolderOpen) {
     return (
-      <div className="mx-auto max-w-3xl px-4 py-6">
+      <div className="mx-auto w-full max-w-3xl px-3 py-5">
         <div className="mb-6 flex items-center gap-3">
           <Button variant="ghost" size="icon" onClick={() => onTahitienFolderOpenChange(false)}>
             <ArrowLeft className="h-4 w-4" />
@@ -103,7 +103,7 @@ export default function Home({
   }
 
   return (
-    <div className="mx-auto max-w-3xl px-4 py-6">
+    <div className="mx-auto w-full max-w-3xl px-3 py-5">
       <div className="mb-6 flex items-center justify-between gap-3">
         <h1 className="flex min-w-0 items-center gap-2 text-xl font-black tracking-tight sm:gap-2.5 sm:text-2xl">
           <span className="bg-brand-gradient flex h-9 w-9 shrink-0 items-center justify-center rounded-xl shadow-md shadow-primary/30 sm:h-10 sm:w-10">

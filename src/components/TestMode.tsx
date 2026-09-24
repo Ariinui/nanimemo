@@ -3,7 +3,6 @@ import { Check, Clock, RotateCcw, Settings2, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import StatsBar from '@/components/study/StatsBar';
-import StudyProgress from '@/components/study/StudyProgress';
 import { generateTestSession, isAnswerCorrect } from '@/lib/quiz';
 import type { VocabCard, Question, QuestionType } from '@/types/vocab';
 
@@ -107,7 +106,7 @@ export default function TestMode({ cards, onBack }: TestModeProps) {
   if (step === 'config') {
     const maxQuestions = cards.length;
     return (
-      <div className="mx-auto flex max-w-xl flex-col gap-6 px-4 py-6">
+      <div className="mx-auto flex w-full max-w-xl flex-1 flex-col gap-3 px-3 pb-3 pt-1">
         <div className="flex items-center justify-between">
           <Button variant="ghost" className="h-11 px-3" onClick={onBack}>
             <X className="h-4 w-4" />
@@ -115,8 +114,8 @@ export default function TestMode({ cards, onBack }: TestModeProps) {
           </Button>
         </div>
 
-        <div className="anim-fade-up rounded-3xl border bg-card p-6 shadow-glow">
-          <div className="mb-6 flex items-center gap-3">
+        <div className="anim-fade-up shadow-glow flex flex-1 flex-col rounded-3xl border bg-card p-4">
+          <div className="mb-4 flex items-center gap-3">
             <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-brand-gradient text-primary-foreground shadow-md shadow-primary/30">
               <Settings2 className="h-5 w-5" />
             </span>
@@ -144,7 +143,7 @@ export default function TestMode({ cards, onBack }: TestModeProps) {
             />
           </div>
 
-          <div className="space-y-1 border-t pt-4">
+          <div className="my-auto space-y-1 border-t pt-4">
             {TYPE_LABELS.map(({ type, label }) => {
               const active = allowedTypes.has(type);
               return (
@@ -171,7 +170,7 @@ export default function TestMode({ cards, onBack }: TestModeProps) {
             })}
           </div>
 
-          <Button className="mt-6 w-full" onClick={startTest}>
+          <Button className="mt-4 h-14 w-full text-base" onClick={startTest}>
             Commencer le test
           </Button>
         </div>
@@ -182,8 +181,8 @@ export default function TestMode({ cards, onBack }: TestModeProps) {
   if (step === 'result') {
     const pct = Math.round((score / session.length) * 100);
     return (
-      <div className="mx-auto flex max-w-2xl flex-col gap-6 px-4 py-8">
-        <div className="anim-pop rounded-3xl border bg-card px-6 py-10 text-center shadow-glow">
+      <div className="mx-auto flex w-full max-w-2xl flex-1 flex-col gap-4 px-3 pb-3 pt-2">
+        <div className="anim-pop shadow-glow flex flex-1 flex-col justify-center rounded-3xl border bg-card px-6 py-10 text-center">
           <p className="text-brand-gradient text-7xl font-black leading-none">{pct}%</p>
           <p className="mt-2 text-sm font-semibold text-muted-foreground">Votre score</p>
           <div className="mt-8 grid grid-cols-3 gap-2">
@@ -229,36 +228,35 @@ export default function TestMode({ cards, onBack }: TestModeProps) {
   const allAnswered = session.length > 0 && Object.keys(answers).length === session.length;
 
   return (
-    <div className="mx-auto flex max-w-2xl flex-col gap-4 px-4 py-4">
-      <div className="sticky top-0 z-10 -mx-4 space-y-3 border-b bg-background/95 px-4 py-3 backdrop-blur">
-        <div className="flex items-center justify-between">
-          <Button variant="ghost" className="h-11 px-3" onClick={onBack}>
-            <X className="h-4 w-4" />
-            Quitter
+    <div className="mx-auto flex w-full max-w-2xl flex-1 flex-col gap-3 px-3 pb-4 pt-1">
+      <div className="sticky top-0 z-10 -mx-3 space-y-2 border-b bg-background/95 px-3 py-2 backdrop-blur">
+        <div className="flex items-center gap-2">
+          <Button variant="ghost" size="icon" className="h-11 w-11 shrink-0 rounded-full" onClick={onBack} aria-label="Quitter" title="Quitter">
+            <X className="h-5 w-5" />
           </Button>
-          <div className="flex items-center gap-4 text-sm font-semibold">
-            <span>
-              <span className="text-primary">{score}</span>
-              <span className="text-muted-foreground"> / {session.length}</span>
-            </span>
-            <span className="flex items-center gap-1.5 tabular-nums text-primary">
-              <Clock className="h-4 w-4" />
-              {formatTime(elapsed)}
-            </span>
-          </div>
+          <span className="min-w-0 flex-1 truncate text-sm font-medium text-muted-foreground">
+            Question {Math.min(answeredCount + 1, session.length)} / {session.length}
+          </span>
+          <span className="text-sm font-semibold tabular-nums">
+            <span className="text-primary">{score}</span>
+            <span className="text-muted-foreground">/{session.length}</span>
+          </span>
+          <span className="flex items-center gap-1 text-sm font-semibold tabular-nums text-primary">
+            <Clock className="h-4 w-4" />
+            {formatTime(elapsed)}
+          </span>
         </div>
-        <StudyProgress label={`Question ${Math.min(answeredCount + 1, session.length)} / ${session.length}`} current={answeredCount} total={session.length} />
-        <div className="flex flex-wrap justify-center gap-1.5">
+        <div className="flex gap-0.5 px-1">
           {session.map((_, i) => (
             <span
               key={i}
-              className={`h-2 w-2 rounded-full border transition-all ${
+              className={`h-2 flex-1 rounded-full transition-colors ${
                 answers[i]
                   ? answers[i].correct
-                    ? 'border-success bg-success'
-                    : 'border-destructive bg-destructive'
+                    ? 'bg-success'
+                    : 'bg-destructive'
                   : i === answeredCount
-                    ? 'border-primary bg-primary shadow-[0_0_8px_hsl(var(--primary)/0.6)]'
+                    ? 'bg-primary'
                     : 'bg-secondary'
               }`}
             />
@@ -270,19 +268,19 @@ export default function TestMode({ cards, onBack }: TestModeProps) {
         {session.map((question, i) => {
           const answered = answers[i];
           return (
-            <div key={i} className="anim-fade-up rounded-2xl border bg-card p-5 shadow-sm">
+            <div key={i} className="anim-fade-up rounded-3xl border bg-card p-4 shadow-sm">
               <div className="mb-3 flex items-center justify-between">
                 <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
                   {question.direction === 'term-to-def' ? 'Terme' : 'Définition'}
                 </span>
                 <span className="text-xs text-muted-foreground">{i + 1} sur {session.length}</span>
               </div>
-              <p className="mb-4 text-lg font-semibold">
+              <p className="mb-4 text-xl font-bold leading-snug">
                 {question.direction === 'term-to-def' ? question.card.term : question.card.definition}
               </p>
 
               {question.type === 'qcm' && (
-                <div className="grid gap-2 sm:grid-cols-2">
+                <div className="grid gap-2.5 sm:grid-cols-2">
                   {question.choices.map((choice, ci) => {
                     const isCorrectChoice = ci === question.correctIndex;
                     const isGiven = answered?.given === String(ci);
@@ -292,7 +290,7 @@ export default function TestMode({ cards, onBack }: TestModeProps) {
                         type="button"
                         disabled={!!answered}
                         onClick={() => submitAnswer(i, String(ci))}
-                        className={`rounded-lg border px-4 py-3 text-left text-sm transition-colors ${
+                        className={`min-h-14 rounded-2xl border px-4 py-3.5 text-left text-base font-medium leading-snug transition-colors ${
                           answered && isCorrectChoice
                             ? 'border-success bg-success/10'
                             : answered && isGiven && !isCorrectChoice
@@ -309,13 +307,13 @@ export default function TestMode({ cards, onBack }: TestModeProps) {
 
               {question.type === 'truefalse' && (
                 <div className="space-y-2">
-                  <p className="rounded-lg border bg-muted/40 p-3 text-sm">{question.shownAnswer}</p>
+                  <p className="rounded-2xl border bg-muted/40 p-3.5 text-base">{question.shownAnswer}</p>
                   <div className="grid grid-cols-2 gap-2">
                     <button
                       type="button"
                       disabled={!!answered}
                       onClick={() => submitAnswer(i, true)}
-                      className={`rounded-lg border px-4 py-2 text-sm transition-colors ${
+                      className={`min-h-14 rounded-2xl border px-4 py-3 text-base font-semibold transition-colors ${
                         answered && question.isCorrect ? 'border-success bg-success/10' : 'hover:bg-accent'
                       }`}
                     >
@@ -325,7 +323,7 @@ export default function TestMode({ cards, onBack }: TestModeProps) {
                       type="button"
                       disabled={!!answered}
                       onClick={() => submitAnswer(i, false)}
-                      className={`rounded-lg border px-4 py-2 text-sm transition-colors ${
+                      className={`min-h-14 rounded-2xl border px-4 py-3 text-base font-semibold transition-colors ${
                         answered && !question.isCorrect ? 'border-success bg-success/10' : 'hover:bg-accent'
                       }`}
                     >
@@ -344,13 +342,14 @@ export default function TestMode({ cards, onBack }: TestModeProps) {
                   className="space-y-2"
                 >
                   <Input
+                    className="h-14 rounded-2xl px-4 text-lg"
                     value={writtenDrafts[i] ?? ''}
                     onChange={(e) => setWrittenDrafts((prev) => ({ ...prev, [i]: e.target.value }))}
                     disabled={!!answered}
                     placeholder={question.direction === 'term-to-def' ? 'Écris la définition...' : 'Écris le terme...'}
                   />
                   {!answered && (
-                    <Button type="submit" className="h-11 px-4" disabled={!(writtenDrafts[i] ?? '').trim()}>
+                    <Button type="submit" className="h-12 px-5 text-base" disabled={!(writtenDrafts[i] ?? '').trim()}>
                       <Check className="h-4 w-4" />
                       Valider
                     </Button>
@@ -370,7 +369,7 @@ export default function TestMode({ cards, onBack }: TestModeProps) {
 
       <StatsBar good={score} review={answeredCount - score} streak={streak} />
 
-      <Button className="mt-2" disabled={!allAnswered} onClick={finishTest}>
+      <Button className="mt-1 h-14 text-base" disabled={!allAnswered} onClick={finishTest}>
         Terminer le test
       </Button>
     </div>

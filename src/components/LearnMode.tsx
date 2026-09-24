@@ -2,6 +2,8 @@ import { useEffect, useMemo, useState } from 'react';
 import { Check, X, LoaderCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import StatsBar from '@/components/study/StatsBar';
+import StudyTopBar from '@/components/study/StudyTopBar';
+import { fitTextClass } from '@/lib/fitText';
 import { Input } from '@/components/ui/input';
 import { generateQuestion, isAnswerCorrect, shuffle } from '@/lib/quiz';
 import { fetchProgress, upsertProgress } from '@/lib/vocabApi';
@@ -134,121 +136,127 @@ export default function LearnMode({ cards, userId, onBack }: LearnModeProps) {
     void commitAnswer(false);
   };
 
-  return (
-    <div className="mx-auto flex max-w-2xl flex-col gap-4 px-4 py-6">
-      <div className="flex items-center justify-between">
-        <Button variant="ghost" className="h-11 px-3" onClick={onBack}>
-          <X className="h-4 w-4" />
-          Fermer
-        </Button>
-        <span className="text-sm text-muted-foreground">{totalCards - remaining} / {totalCards}</span>
-      </div>
+  const questionText = question.direction === 'term-to-def' ? currentCard.term : currentCard.definition;
+  const choiceBase =
+    'flex min-h-12 flex-1 items-center gap-3 rounded-2xl border bg-card px-4 py-2 text-left text-lg font-semibold leading-snug transition-all active:scale-[0.99] disabled:cursor-default';
 
-      <div className="flex items-center gap-2">
-        <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-brand-gradient text-xs font-bold text-primary-foreground">
-          {totalCards - remaining}
-        </span>
-        <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-muted">
+  return (
+    <div className="mx-auto flex w-full max-w-2xl flex-1 flex-col gap-2.5 px-3 pb-3 pt-1">
+      <StudyTopBar
+        onBack={onBack}
+        right={
+          <span className="w-16 shrink-0 text-right text-sm font-medium tabular-nums text-muted-foreground">
+            {totalCards - remaining} / {totalCards}
+          </span>
+        }
+      >
+        <div className="h-2.5 overflow-hidden rounded-full bg-secondary">
           <div className="bg-brand-gradient h-full rounded-full transition-all duration-500" style={{ width: `${progressPct}%` }} />
         </div>
-        <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-muted text-xs font-bold text-muted-foreground">
-          {totalCards}
-        </span>
-      </div>
+      </StudyTopBar>
 
-      <div key={currentCard.id + stats.correct + stats.wrong} className="anim-pop rounded-3xl border bg-card p-8 text-center shadow-glow">
-        <p className="mb-1 text-xs uppercase tracking-wide text-muted-foreground">
+      <div
+        key={currentCard.id + stats.correct + stats.wrong}
+        className={`anim-pop shadow-glow flex min-h-24 ${question.type === 'written' ? 'flex-[5]' : 'flex-[2]'} flex-col items-center justify-center rounded-3xl border bg-card px-5 py-4 text-center`}
+      >
+        <p className="mb-2 text-xs font-semibold uppercase tracking-widest text-muted-foreground">
           {question.direction === 'term-to-def' ? 'Terme' : 'Définition'}
         </p>
-        <p className="text-2xl font-semibold">
-          {question.direction === 'term-to-def' ? currentCard.term : currentCard.definition}
-        </p>
+        <p className={`${fitTextClass(questionText)} break-words font-bold leading-snug`}>{questionText}</p>
       </div>
 
-      {question.type === 'qcm' && (
-        <div className="grid gap-2 sm:grid-cols-2">
-          {question.choices.map((choice, i) => {
+      <div className={`flex ${question.type === 'written' ? 'flex-none' : 'flex-[3]'} flex-col gap-2.5`}>
+        {question.type === 'qcm' &&
+          question.choices.map((choice, i) => {
             const isCorrectChoice = i === question.correctIndex;
             const isSelected = selectedChoice === i;
             const showState = feedback !== null;
             return (
-              <Button
+              <button
                 key={i}
-                variant="outline"
-                className={`h-auto items-start justify-start gap-2.5 whitespace-normal py-3 text-left ${
-                  showState && isCorrectChoice ? 'border-success bg-success/10' : ''
-                } ${showState && isSelected && !isCorrectChoice ? 'border-destructive bg-destructive/10' : ''}`}
+                type="button"
+                className={`${choiceBase} ${
+                  showState && isCorrectChoice
+                    ? 'border-success bg-success/10'
+                    : showState && isSelected
+                      ? 'anim-shake border-destructive bg-destructive/10'
+                      : 'hover:border-primary/50'
+                }`}
                 onClick={() => handleQcmAnswer(i)}
                 disabled={feedback !== null}
               >
-                <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full border text-xs text-muted-foreground">
+                <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border text-sm text-muted-foreground">
                   {i + 1}
                 </span>
-                {choice}
-              </Button>
+                <span className="min-w-0 break-words">{choice}</span>
+              </button>
             );
           })}
-        </div>
-      )}
 
-      {question.type === 'truefalse' && (
-        <div className="space-y-3">
-          <p className="rounded-xl border bg-muted/40 p-4 text-center">{question.shownAnswer}</p>
-          <div className="grid grid-cols-2 gap-3">
-            <Button
-              variant="outline"
-              className={feedback && question.isCorrect ? 'border-success bg-success/10' : ''}
-              onClick={() => handleTrueFalse(true)}
-              disabled={feedback !== null}
-            >
-              Vrai
-            </Button>
-            <Button
-              variant="outline"
-              className={feedback && !question.isCorrect ? 'border-success bg-success/10' : ''}
-              onClick={() => handleTrueFalse(false)}
-              disabled={feedback !== null}
-            >
-              Faux
-            </Button>
-          </div>
-        </div>
-      )}
-
-      {question.type === 'written' && (
-        <form onSubmit={handleWrittenSubmit} className="space-y-3">
-          <Input
-            autoFocus
-            value={writtenAnswer}
-            onChange={(e) => setWrittenAnswer(e.target.value)}
-            placeholder={question.direction === 'term-to-def' ? 'Écris la définition...' : 'Écris le terme...'}
-            disabled={feedback !== null}
-          />
-          {feedback === 'wrong' && (
-            <p className="text-sm text-destructive">
-              Réponse attendue : {question.direction === 'term-to-def' ? question.card.definition : question.card.term}
+        {question.type === 'truefalse' && (
+          <>
+            <p className="flex flex-1 items-center justify-center rounded-2xl border bg-secondary/40 p-4 text-center text-xl font-semibold leading-snug">
+              {question.shownAnswer}
             </p>
-          )}
-          <Button type="submit" className="w-full" disabled={feedback !== null || !writtenAnswer.trim()}>
-            Valider
-          </Button>
-        </form>
-      )}
+            <div className="grid flex-1 grid-cols-2 gap-3">
+              <button
+                type="button"
+                className={`${choiceBase} justify-center text-xl ${feedback && question.isCorrect ? 'border-success bg-success/10' : 'hover:border-primary/50'}`}
+                onClick={() => handleTrueFalse(true)}
+                disabled={feedback !== null}
+              >
+                Vrai
+              </button>
+              <button
+                type="button"
+                className={`${choiceBase} justify-center text-xl ${feedback && !question.isCorrect ? 'border-success bg-success/10' : 'hover:border-primary/50'}`}
+                onClick={() => handleTrueFalse(false)}
+                disabled={feedback !== null}
+              >
+                Faux
+              </button>
+            </div>
+          </>
+        )}
 
-      {feedback ? (
-        <div className={`flex items-center justify-center gap-2 text-sm font-medium ${feedback === 'correct' ? 'text-success' : 'text-destructive'}`}>
-          {feedback === 'correct' ? <Check className="h-4 w-4" /> : <X className="h-4 w-4" />}
-          {feedback === 'correct' ? 'Correct !' : 'Pas tout à fait'}
-        </div>
-      ) : (
-        <button
-          type="button"
-          onClick={handleDontKnow}
-          className="min-h-11 py-3 text-center text-sm font-medium text-primary underline-offset-2 hover:underline"
-        >
-          Vous ne savez pas ?
-        </button>
-      )}
+        {question.type === 'written' && (
+          <form onSubmit={handleWrittenSubmit} className="flex flex-col gap-3">
+            <Input
+              autoFocus
+              className="h-14 rounded-2xl px-4 text-lg"
+              value={writtenAnswer}
+              onChange={(e) => setWrittenAnswer(e.target.value)}
+              placeholder={question.direction === 'term-to-def' ? 'Écris la définition...' : 'Écris le terme...'}
+              disabled={feedback !== null}
+            />
+            {feedback === 'wrong' && (
+              <p className="text-base text-destructive">
+                Réponse attendue : {question.direction === 'term-to-def' ? question.card.definition : question.card.term}
+              </p>
+            )}
+            <Button type="submit" className="h-14 w-full text-base" disabled={feedback !== null || !writtenAnswer.trim()}>
+              Valider
+            </Button>
+          </form>
+        )}
+      </div>
+
+      <div className="flex min-h-11 shrink-0 items-center justify-center">
+        {feedback ? (
+          <div className={`flex items-center justify-center gap-2 text-base font-semibold ${feedback === 'correct' ? 'text-success' : 'text-destructive'}`}>
+            {feedback === 'correct' ? <Check className="h-5 w-5" /> : <X className="h-5 w-5" />}
+            {feedback === 'correct' ? 'Correct !' : 'Pas tout à fait'}
+          </div>
+        ) : (
+          <button
+            type="button"
+            onClick={handleDontKnow}
+            className="min-h-11 px-4 text-center text-base font-medium text-primary underline-offset-2 hover:underline"
+          >
+            Vous ne savez pas ?
+          </button>
+        )}
+      </div>
 
       <StatsBar good={stats.correct} review={stats.wrong} streak={streak} />
     </div>
