@@ -8,6 +8,7 @@ import LearnMode from '@/components/LearnMode';
 import TestMode from '@/components/TestMode';
 import MatchMode from '@/components/MatchMode';
 import LessonMode from '@/components/LessonMode';
+import ModeTabs from '@/components/study/ModeTabs';
 import { deleteCard, deleteSet, fetchCards, insertCards, updateCardImage } from '@/lib/vocabApi';
 import type { VocabCard, VocabSet, StudyMode } from '@/types/vocab';
 
@@ -149,18 +150,27 @@ export default function SetEditor({ set, userId, onBack }: SetEditorProps) {
     }
   };
 
-  if (mode === 'cards') return <FlashcardMode cards={cards} onBack={() => setMode(null)} />;
-  if (mode === 'learn') return <LearnMode cards={cards} userId={userId} onBack={() => setMode(null)} />;
-  if (mode === 'match') return <MatchMode cards={cards} onBack={() => setMode(null)} />;
-  if (mode === 'test') return <TestMode cards={cards} onBack={() => setMode(null)} />;
-  if (mode === 'lesson')
+  if (mode) {
+    const close = () => setMode(null);
     return (
-      <LessonMode
-        set={{ ...set, lesson }}
-        onBack={() => setMode(null)}
-        onLessonUpdated={setLesson}
-      />
+      <div className="min-h-dvh">
+        <ModeTabs
+          active={mode}
+          onChange={setMode}
+          disabledModes={cards.length === 0 ? MODE_BUTTONS.filter((b) => b.mode !== 'lesson').map((b) => b.mode) : []}
+        />
+        <div key={mode} className="anim-fade-up">
+          {mode === 'cards' && <FlashcardMode cards={cards} userId={userId} onBack={close} />}
+          {mode === 'learn' && <LearnMode cards={cards} userId={userId} onBack={close} />}
+          {mode === 'match' && <MatchMode cards={cards} onBack={close} />}
+          {mode === 'test' && <TestMode cards={cards} onBack={close} />}
+          {mode === 'lesson' && (
+            <LessonMode set={{ ...set, lesson }} onBack={close} onLessonUpdated={setLesson} />
+          )}
+        </div>
+      </div>
     );
+  }
 
   return (
     <div className="mx-auto max-w-3xl px-4 py-6">
@@ -182,7 +192,7 @@ export default function SetEditor({ set, userId, onBack }: SetEditorProps) {
           <Button
             key={m}
             variant="outline"
-            className="h-12 justify-start gap-2.5 px-4"
+            className="h-14 justify-start gap-3 rounded-2xl bg-card px-4 transition-all hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-glow"
             onClick={() => setMode(m)}
             disabled={m !== 'lesson' && cards.length === 0}
           >
@@ -206,7 +216,7 @@ export default function SetEditor({ set, userId, onBack }: SetEditorProps) {
       {showTerms && (
       <>
       <div className="mb-4 flex justify-end">
-        <Button size="sm" onClick={() => setImportOpen(true)}>
+        <Button className="h-11 px-4" onClick={() => setImportOpen(true)}>
           <Plus className="h-4 w-4" />
           Importer
         </Button>
@@ -241,7 +251,7 @@ export default function SetEditor({ set, userId, onBack }: SetEditorProps) {
                 <p className="text-sm text-muted-foreground">{card.definition}</p>
               </div>
               {card.image_url && (
-                <Button variant="ghost" size="sm" onClick={() => removeImage(card.id)}>
+                <Button variant="ghost" className="h-11 px-3" onClick={() => removeImage(card.id)}>
                   Retirer l'image
                 </Button>
               )}

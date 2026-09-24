@@ -1,7 +1,9 @@
-import { useMemo, useState } from 'react';
-import { Check, RotateCcw, Settings2, X } from 'lucide-react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { Check, Clock, RotateCcw, Settings2, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import StatsBar from '@/components/study/StatsBar';
+import StudyProgress from '@/components/study/StudyProgress';
 import { generateTestSession, isAnswerCorrect } from '@/lib/quiz';
 import type { VocabCard, Question, QuestionType } from '@/types/vocab';
 
@@ -18,6 +20,12 @@ const TYPE_LABELS: { type: QuestionType; label: string }[] = [
 
 type Answered = { correct: boolean; given: string };
 
+function formatTime(totalSeconds: number) {
+  const m = String(Math.floor(totalSeconds / 60)).padStart(2, '0');
+  const s = String(totalSeconds % 60).padStart(2, '0');
+  return `${m}:${s}`;
+}
+
 export default function TestMode({ cards, onBack }: TestModeProps) {
   const [step, setStep] = useState<'config' | 'active' | 'result'>('config');
   const [questionCount, setQuestionCount] = useState(Math.min(20, cards.length));
@@ -26,10 +34,30 @@ export default function TestMode({ cards, onBack }: TestModeProps) {
   const [answers, setAnswers] = useState<Record<number, Answered>>({});
   const [writtenDrafts, setWrittenDrafts] = useState<Record<number, string>>({});
 
+  const [elapsed, setElapsed] = useState(0);
+  const startedAt = useRef(0);
+
   const score = useMemo(
     () => Object.values(answers).filter((a) => a.correct).length,
     [answers]
   );
+  const answeredCount = Object.keys(answers).length;
+
+  // Série en cours : bonnes réponses d'affilée, dans l'ordre des questions
+  const streak = useMemo(() => {
+    let run = 0;
+    for (let i = 0; i < session.length; i++) {
+      if (!answers[i]) break;
+      run = answers[i].correct ? run + 1 : 0;
+    }
+    return run;
+  }, [answers, session.length]);
+
+  useEffect(() => {
+    if (step !== 'active') return;
+    const id = setInterval(() => setElapsed(Math.floor((Date.now() - startedAt.current) / 1000)), 1000);
+    return () => clearInterval(id);
+  }, [step]);
 
   if (cards.length === 0) {
     return (
@@ -57,7 +85,14 @@ export default function TestMode({ cards, onBack }: TestModeProps) {
     setSession(generateTestSession(cards, questionCount, allowedTypes));
     setAnswers({});
     setWrittenDrafts({});
+    startedAt.current = Date.now();
+    setElapsed(0);
     setStep('active');
+  };
+
+  const finishTest = () => {
+    setElapsed(Math.floor((Date.now() - startedAt.current) / 1000));
+    setStep('result');
   };
 
   const restart = () => setStep('config');
@@ -74,15 +109,15 @@ export default function TestMode({ cards, onBack }: TestModeProps) {
     return (
       <div className="mx-auto flex max-w-xl flex-col gap-6 px-4 py-6">
         <div className="flex items-center justify-between">
-          <Button variant="ghost" size="sm" onClick={onBack}>
+          <Button variant="ghost" className="h-11 px-3" onClick={onBack}>
             <X className="h-4 w-4" />
             Fermer
           </Button>
         </div>
 
-        <div className="rounded-2xl border bg-card p-6 shadow-sm">
+        <div className="anim-fade-up rounded-3xl border bg-card p-6 shadow-glow">
           <div className="mb-6 flex items-center gap-3">
-            <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary">
+            <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-brand-gradient text-primary-foreground shadow-md shadow-primary/30">
               <Settings2 className="h-5 w-5" />
             </span>
             <div>
@@ -147,16 +182,30 @@ export default function TestMode({ cards, onBack }: TestModeProps) {
   if (step === 'result') {
     const pct = Math.round((score / session.length) * 100);
     return (
-      <div className="mx-auto flex max-w-2xl flex-col gap-6 px-4 py-10">
-        <div className="text-center">
-          <h2 className="text-3xl font-bold">{pct}%</h2>
-          <p className="mt-1 text-muted-foreground">{score} / {session.length} bonnes réponses</p>
+      <div className="mx-auto flex max-w-2xl flex-col gap-6 px-4 py-8">
+        <div className="anim-pop rounded-3xl border bg-card px-6 py-10 text-center shadow-glow">
+          <p className="text-brand-gradient text-7xl font-black leading-none">{pct}%</p>
+          <p className="mt-2 text-sm font-semibold text-muted-foreground">Votre score</p>
+          <div className="mt-8 grid grid-cols-3 gap-2">
+            <div>
+              <p className="text-2xl font-extrabold text-success">{score}</p>
+              <p className="mt-0.5 text-xs text-muted-foreground">Correctes</p>
+            </div>
+            <div>
+              <p className="text-2xl font-extrabold text-destructive">{session.length - score}</p>
+              <p className="mt-0.5 text-xs text-muted-foreground">Fautes</p>
+            </div>
+            <div>
+              <p className="text-2xl font-extrabold text-primary">{formatTime(elapsed)}</p>
+              <p className="mt-0.5 text-xs text-muted-foreground">Temps</p>
+            </div>
+          </div>
         </div>
 
         <div className="space-y-2">
           {session.map((q, i) =>
             answers[i] && !answers[i].correct ? (
-              <div key={i} className="rounded-lg border border-destructive/30 bg-destructive/5 p-3 text-sm">
+              <div key={i} className="rounded-xl border border-destructive/30 bg-destructive/10 p-3 text-sm">
                 <p className="font-medium">{q.direction === 'term-to-def' ? q.card.term : q.card.definition}</p>
                 <p className="text-muted-foreground">
                   Attendu : {q.direction === 'term-to-def' ? q.card.definition : q.card.term}
@@ -181,22 +230,47 @@ export default function TestMode({ cards, onBack }: TestModeProps) {
 
   return (
     <div className="mx-auto flex max-w-2xl flex-col gap-4 px-4 py-4">
-      <div className="sticky top-0 z-10 -mx-4 flex items-center justify-between border-b bg-background/95 px-4 py-3 backdrop-blur">
-        <Button variant="ghost" size="sm" onClick={onBack}>
-          <X className="h-4 w-4" />
-          Quitter
-        </Button>
-        <span className="text-sm font-semibold">
-          <span className="text-primary">{score}</span>
-          <span className="text-muted-foreground"> / {session.length}</span>
-        </span>
+      <div className="sticky top-0 z-10 -mx-4 space-y-3 border-b bg-background/95 px-4 py-3 backdrop-blur">
+        <div className="flex items-center justify-between">
+          <Button variant="ghost" className="h-11 px-3" onClick={onBack}>
+            <X className="h-4 w-4" />
+            Quitter
+          </Button>
+          <div className="flex items-center gap-4 text-sm font-semibold">
+            <span>
+              <span className="text-primary">{score}</span>
+              <span className="text-muted-foreground"> / {session.length}</span>
+            </span>
+            <span className="flex items-center gap-1.5 tabular-nums text-primary">
+              <Clock className="h-4 w-4" />
+              {formatTime(elapsed)}
+            </span>
+          </div>
+        </div>
+        <StudyProgress label={`Question ${Math.min(answeredCount + 1, session.length)} / ${session.length}`} current={answeredCount} total={session.length} />
+        <div className="flex flex-wrap justify-center gap-1.5">
+          {session.map((_, i) => (
+            <span
+              key={i}
+              className={`h-2 w-2 rounded-full border transition-all ${
+                answers[i]
+                  ? answers[i].correct
+                    ? 'border-success bg-success'
+                    : 'border-destructive bg-destructive'
+                  : i === answeredCount
+                    ? 'border-primary bg-primary shadow-[0_0_8px_hsl(var(--primary)/0.6)]'
+                    : 'bg-secondary'
+              }`}
+            />
+          ))}
+        </div>
       </div>
 
       <div className="space-y-4">
         {session.map((question, i) => {
           const answered = answers[i];
           return (
-            <div key={i} className="rounded-2xl border bg-card p-5 shadow-sm">
+            <div key={i} className="anim-fade-up rounded-2xl border bg-card p-5 shadow-sm">
               <div className="mb-3 flex items-center justify-between">
                 <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
                   {question.direction === 'term-to-def' ? 'Terme' : 'Définition'}
@@ -276,7 +350,7 @@ export default function TestMode({ cards, onBack }: TestModeProps) {
                     placeholder={question.direction === 'term-to-def' ? 'Écris la définition...' : 'Écris le terme...'}
                   />
                   {!answered && (
-                    <Button type="submit" size="sm" disabled={!(writtenDrafts[i] ?? '').trim()}>
+                    <Button type="submit" className="h-11 px-4" disabled={!(writtenDrafts[i] ?? '').trim()}>
                       <Check className="h-4 w-4" />
                       Valider
                     </Button>
@@ -294,7 +368,9 @@ export default function TestMode({ cards, onBack }: TestModeProps) {
         })}
       </div>
 
-      <Button className="mt-2" disabled={!allAnswered} onClick={() => setStep('result')}>
+      <StatsBar good={score} review={answeredCount - score} streak={streak} />
+
+      <Button className="mt-2" disabled={!allAnswered} onClick={finishTest}>
         Terminer le test
       </Button>
     </div>

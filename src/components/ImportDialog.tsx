@@ -238,7 +238,7 @@ export default function ImportDialog({ open, onOpenChange, onImport }: ImportDia
                           onChange={(e) => editRow(i, { term: e.target.value }, current)}
                           className="h-9"
                         />
-                        <p className="mt-1 text-[10px] uppercase tracking-wide text-muted-foreground">Terme</p>
+                        <p className="mt-1 text-xs uppercase tracking-wide text-muted-foreground">Terme</p>
                       </div>
                       <div>
                         <Input
@@ -246,7 +246,7 @@ export default function ImportDialog({ open, onOpenChange, onImport }: ImportDia
                           onChange={(e) => editRow(i, { definition: e.target.value }, current)}
                           className="h-9"
                         />
-                        <p className="mt-1 text-[10px] uppercase tracking-wide text-muted-foreground">
+                        <p className="mt-1 text-xs uppercase tracking-wide text-muted-foreground">
                           Définition{row.duplicate && ' · doublon'}
                         </p>
                       </div>

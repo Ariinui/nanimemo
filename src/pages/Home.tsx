@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { ArrowLeft, BookOpen, LoaderCircle, Plus } from 'lucide-react';
+import { ArrowLeft, BookOpen, BrainCircuit, LoaderCircle, Plus } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -91,7 +91,7 @@ export default function Home({
               key={set.id}
               type="button"
               onClick={() => onOpenSet(set)}
-              className="rounded-xl border bg-card p-4 text-left shadow-sm transition-colors hover:bg-accent"
+              className="anim-fade-up rounded-2xl border bg-card p-4 text-left shadow-sm transition-all hover:-translate-y-0.5 hover:border-primary/40 hover:bg-card hover:shadow-glow"
             >
               <p className="font-semibold">{set.title}</p>
               {set.description && <p className="mt-1 text-sm text-muted-foreground">{set.description}</p>}
@@ -104,10 +104,15 @@ export default function Home({
 
   return (
     <div className="mx-auto max-w-3xl px-4 py-6">
-      <div className="mb-6 flex items-center justify-between">
-        <h1 className="text-2xl font-bold">nanimemo</h1>
-        <div className="flex gap-2">
-          <Button onClick={() => setCreateOpen(true)}>
+      <div className="mb-6 flex items-center justify-between gap-3">
+        <h1 className="flex min-w-0 items-center gap-2 text-xl font-black tracking-tight sm:gap-2.5 sm:text-2xl">
+          <span className="bg-brand-gradient flex h-9 w-9 shrink-0 items-center justify-center rounded-xl shadow-md shadow-primary/30 sm:h-10 sm:w-10">
+            <BrainCircuit className="h-5 w-5 text-white" strokeWidth={2} />
+          </span>
+          <span className="text-brand-gradient truncate">nanimemo</span>
+        </h1>
+        <div className="flex shrink-0 gap-2">
+          <Button className="h-11 px-3.5" onClick={() => setCreateOpen(true)}>
             <Plus className="h-4 w-4" />
             Nouveau set
           </Button>
@@ -119,7 +124,7 @@ export default function Home({
           <LoaderCircle className="h-6 w-6 animate-spin text-muted-foreground" />
         </div>
       ) : sets.length === 0 ? (
-        <div className="rounded-lg border border-dashed p-12 text-center">
+        <div className="rounded-2xl border border-dashed p-12 text-center">
           <p className="mb-4 text-muted-foreground">Aucun set pour l'instant.</p>
           <Button onClick={() => setCreateOpen(true)}>
             <Plus className="h-4 w-4" />
@@ -132,7 +137,7 @@ export default function Home({
             <button
               type="button"
               onClick={() => onTahitienFolderOpenChange(true)}
-              className="flex items-center gap-3 rounded-xl border bg-card p-4 text-left shadow-sm transition-colors hover:bg-accent"
+              className="flex items-center gap-3 anim-fade-up rounded-2xl border bg-card p-4 text-left shadow-sm transition-all hover:-translate-y-0.5 hover:border-primary/40 hover:bg-card hover:shadow-glow"
             >
               <BookOpen className="h-5 w-5 shrink-0 text-muted-foreground" />
               <div>
@@ -146,7 +151,7 @@ export default function Home({
               key={set.id}
               type="button"
               onClick={() => onOpenSet(set)}
-              className="rounded-xl border bg-card p-4 text-left shadow-sm transition-colors hover:bg-accent"
+              className="anim-fade-up rounded-2xl border bg-card p-4 text-left shadow-sm transition-all hover:-translate-y-0.5 hover:border-primary/40 hover:bg-card hover:shadow-glow"
             >
               <p className="font-semibold">{set.title}</p>
               {set.description && <p className="mt-1 text-sm text-muted-foreground">{set.description}</p>}

@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Check, X, LoaderCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import StatsBar from '@/components/study/StatsBar';
 import { Input } from '@/components/ui/input';
 import { generateQuestion, isAnswerCorrect, shuffle } from '@/lib/quiz';
 import { fetchProgress, upsertProgress } from '@/lib/vocabApi';
@@ -23,6 +24,7 @@ export default function LearnMode({ cards, userId, onBack }: LearnModeProps) {
   const [feedback, setFeedback] = useState<'correct' | 'wrong' | null>(null);
   const [selectedChoice, setSelectedChoice] = useState<number | null>(null);
   const [stats, setStats] = useState({ correct: 0, wrong: 0 });
+  const [streak, setStreak] = useState(0);
 
   useEffect(() => {
     let cancelled = false;
@@ -78,6 +80,7 @@ export default function LearnMode({ cards, userId, onBack }: LearnModeProps) {
 
   const commitAnswer = async (correct: boolean) => {
     setStats((s) => (correct ? { ...s, correct: s.correct + 1 } : { ...s, wrong: s.wrong + 1 }));
+    setStreak((n) => (correct ? n + 1 : 0));
 
     const prev = progressMap.get(currentCard.id);
     const nextBox: MasteryBox = correct
@@ -134,7 +137,7 @@ export default function LearnMode({ cards, userId, onBack }: LearnModeProps) {
   return (
     <div className="mx-auto flex max-w-2xl flex-col gap-4 px-4 py-6">
       <div className="flex items-center justify-between">
-        <Button variant="ghost" size="sm" onClick={onBack}>
+        <Button variant="ghost" className="h-11 px-3" onClick={onBack}>
           <X className="h-4 w-4" />
           Fermer
         </Button>
@@ -142,18 +145,18 @@ export default function LearnMode({ cards, userId, onBack }: LearnModeProps) {
       </div>
 
       <div className="flex items-center gap-2">
-        <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary text-xs font-bold text-primary-foreground">
+        <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-brand-gradient text-xs font-bold text-primary-foreground">
           {totalCards - remaining}
         </span>
         <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-muted">
-          <div className="h-full bg-primary transition-all" style={{ width: `${progressPct}%` }} />
+          <div className="bg-brand-gradient h-full rounded-full transition-all duration-500" style={{ width: `${progressPct}%` }} />
         </div>
         <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-muted text-xs font-bold text-muted-foreground">
           {totalCards}
         </span>
       </div>
 
-      <div className="rounded-2xl border bg-card p-8 text-center shadow-sm">
+      <div key={currentCard.id + stats.correct + stats.wrong} className="anim-pop rounded-3xl border bg-card p-8 text-center shadow-glow">
         <p className="mb-1 text-xs uppercase tracking-wide text-muted-foreground">
           {question.direction === 'term-to-def' ? 'Terme' : 'Définition'}
         </p>
@@ -241,11 +244,13 @@ export default function LearnMode({ cards, userId, onBack }: LearnModeProps) {
         <button
           type="button"
           onClick={handleDontKnow}
-          className="text-center text-sm text-primary/80 underline-offset-2 hover:underline"
+          className="min-h-11 py-3 text-center text-sm font-medium text-primary underline-offset-2 hover:underline"
         >
           Vous ne savez pas ?
         </button>
       )}
+
+      <StatsBar good={stats.correct} review={stats.wrong} streak={streak} />
     </div>
   );
 }

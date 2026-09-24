@@ -126,7 +126,7 @@ export default function MatchMode({ cards, onBack }: MatchModeProps) {
   return (
     <div className="mx-auto flex max-w-2xl flex-col gap-4 px-4 py-6">
       <div className="flex items-center justify-between">
-        <Button variant="ghost" size="sm" onClick={onBack}>
+        <Button variant="ghost" className="h-11 px-3" onClick={onBack}>
           <X className="h-4 w-4" />
           Fermer
         </Button>

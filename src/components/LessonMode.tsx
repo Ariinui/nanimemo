@@ -27,13 +27,13 @@ export default function LessonMode({ set, onBack, onLessonUpdated }: LessonModeP
   return (
     <div className="mx-auto flex max-w-2xl flex-col gap-4 px-4 py-4">
       <div className="sticky top-0 z-10 -mx-4 flex items-center justify-between border-b bg-background/95 px-4 py-3 backdrop-blur">
-        <Button variant="ghost" size="sm" onClick={onBack}>
+        <Button variant="ghost" className="h-11 px-3" onClick={onBack}>
           <X className="h-4 w-4" />
           Fermer
         </Button>
         <span className="text-sm font-semibold text-muted-foreground">Leçon</span>
         {!editing && (
-          <Button variant="ghost" size="sm" onClick={() => setEditing(true)}>
+          <Button variant="ghost" className="h-11 px-3" onClick={() => setEditing(true)}>
             <Pencil className="h-4 w-4" />
             Modifier
           </Button>
@@ -53,7 +53,7 @@ export default function LessonMode({ set, onBack, onLessonUpdated }: LessonModeP
       ) : !lesson ? (
         <div className="rounded-lg border border-dashed p-10 text-center text-sm text-muted-foreground">
           <p className="mb-4">Aucune leçon pour ce set.</p>
-          <Button size="sm" onClick={() => setEditing(true)}>
+          <Button className="h-11 px-4" onClick={() => setEditing(true)}>
             <Pencil className="h-4 w-4" />
             Créer une leçon
           </Button>
