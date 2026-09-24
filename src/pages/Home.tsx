@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { ArrowLeft, BookOpen, LoaderCircle, LogOut, Plus } from 'lucide-react';
+import { ArrowLeft, BookOpen, LoaderCircle, Plus } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -71,11 +71,6 @@ export default function Home({
     }
   };
 
-  const handleSignOut = () => {
-    localStorage.removeItem('nanimemo_entered');
-    window.location.reload();
-  };
-
   const tahitienSets = sets
     .filter((s) => s.title.startsWith(TAHITIEN_LESSON_PREFIX))
     .sort((a, b) => tahitienLessonNumber(a.title) - tahitienLessonNumber(b.title));
@@ -115,9 +110,6 @@ export default function Home({
           <Button onClick={() => setCreateOpen(true)}>
             <Plus className="h-4 w-4" />
             Nouveau set
-          </Button>
-          <Button variant="ghost" size="icon" onClick={handleSignOut} title="Déconnexion">
-            <LogOut className="h-4 w-4" />
           </Button>
         </div>
       </div>
