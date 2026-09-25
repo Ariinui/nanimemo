@@ -62,7 +62,10 @@ export async function downloadImage(urls: string[]): Promise<Blob> {
   throw new ImageSaveError(lastMessage, 'download');
 }
 
-/** Retaille en JPEG (800 px max). Repli : l'original s'il est déjà assez léger. */
+/**
+ * Retaille en JPEG (800 px max). Un fichier qui ne se décode pas est refusé : jamais de repli
+ * sur l'original (une extension .jpg ne prouve pas que le contenu soit une image).
+ */
 export async function toJpeg(blob: Blob): Promise<Blob> {
   try {
     const bitmap = await createImageBitmap(blob);
@@ -77,11 +80,10 @@ export async function toJpeg(blob: Blob): Promise<Blob> {
     ctx.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
     bitmap.close();
     const out = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, 'image/jpeg', JPEG_QUALITY));
-    if (!out) throw new Error('encodage impossible');
+    if (!out || out.size === 0) throw new Error('encodage impossible');
     return out;
   } catch {
-    if (blob.size <= MAX_BYTES && /^image\/(jpeg|png|webp)$/.test(blob.type)) return blob;
-    throw new ImageSaveError('Image illisible ou trop lourde.', 'process');
+    throw new ImageSaveError('Image illisible ou corrompue.', 'process');
   }
 }
 
@@ -91,7 +93,15 @@ export async function toJpeg(blob: Blob): Promise<Blob> {
  * était sur notre stockage) est supprimée une fois la nouvelle en place.
  */
 export async function saveCardImage(card: { id: string; image_url: string | null }, urls: string[]): Promise<string> {
-  const source = await downloadImage(urls);
+  return saveCardImageBlob(card, await downloadImage(urls));
+}
+
+/** Photo choisie par l'utilisateur (galerie ou appareil photo) : mêmes étapes, sans téléchargement. */
+export const MAX_UPLOAD_BYTES = 30 * 1024 * 1024; // photo brute avant retaille
+export async function saveCardImageBlob(card: { id: string; image_url: string | null }, source: Blob): Promise<string> {
+  if (!source.type.startsWith('image/')) throw new ImageSaveError('Ce fichier n’est pas une image.', 'process');
+  if (/^image\/hei[cf]/.test(source.type)) throw new ImageSaveError('Format HEIC non pris en charge : choisis une photo JPEG ou PNG.', 'process');
+  if (source.size > MAX_UPLOAD_BYTES) throw new ImageSaveError('Photo trop lourde (30 Mo maximum).', 'process');
   const jpeg = await toJpeg(source);
   if (jpeg.size > MAX_BYTES) throw new ImageSaveError('Image trop lourde après compression.', 'process');
 

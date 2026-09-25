@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { ChevronLeft, ImageOff, LoaderCircle, RefreshCw, Search, SkipForward } from 'lucide-react';
+import { ChevronLeft, ImageOff, ImagePlus, LoaderCircle, RefreshCw, Search, SkipForward } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import StudyTopBar from '@/components/study/StudyTopBar';
-import { ImageSaveError, saveCardImage } from '@/lib/cardImages';
+import { ImageSaveError, saveCardImage, saveCardImageBlob } from '@/lib/cardImages';
 import {
   buildQueries,
   cleanTerm,
@@ -23,6 +23,9 @@ interface ImageWizardProps {
 
 type Status = 'loading' | 'ready' | 'empty' | 'error';
 
+// Identifiant de « sauvegarde en cours » pour une photo envoyée (les résultats Pixabay ont des id positifs).
+const UPLOAD_ID = -1;
+
 export default function ImageWizard({ cards, onSaved, onClose }: ImageWizardProps) {
   const [index, setIndex] = useState(0);
   const [outcome, setOutcome] = useState<Record<string, 'saved' | 'skipped'>>({});
@@ -37,6 +40,7 @@ export default function ImageWizard({ cards, onSaved, onClose }: ImageWizardProp
   const [saveError, setSaveError] = useState('');
   const [savedUrls, setSavedUrls] = useState<Record<string, string>>({});
 
+  const fileInput = useRef<HTMLInputElement>(null);
   const requestId = useRef(0);
   const abortRef = useRef<AbortController | null>(null);
 
@@ -144,6 +148,29 @@ export default function ImageWizard({ cards, onSaved, onClose }: ImageWizardProp
     }
   };
 
+  // Photo de l'utilisateur (galerie ou appareil photo) : même enregistrement permanent que Pixabay.
+  const handleFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = ''; // permet de rechoisir le même fichier
+    if (!file || !card || savingId !== null) return;
+    setSavingId(UPLOAD_ID);
+    setSaveError('');
+    try {
+      const url = await saveCardImageBlob({ id: card.id, image_url: savedUrls[card.id] ?? card.image_url }, file);
+      onSaved(card.id, url);
+      setSavedUrls((m) => ({ ...m, [card.id]: url }));
+      setOutcome((o) => ({ ...o, [card.id]: 'saved' }));
+      goTo(index + 1);
+    } catch (err) {
+      setSavingId(null);
+      setSaveError(
+        err instanceof ImageSaveError
+          ? `${err.message} Choisis une autre photo.`
+          : 'Enregistrement impossible. Vérifie ta connexion et réessaie.',
+      );
+    }
+  };
+
   const handleSkip = () => {
     if (!card) return;
     setOutcome((o) => ({ ...o, [card.id]: 'skipped' }));
@@ -236,6 +263,18 @@ export default function ImageWizard({ cards, onSaved, onClose }: ImageWizardProp
               ))}
             </div>
 
+            <input ref={fileInput} type="file" accept="image/*" className="hidden" onChange={(e) => void handleFile(e)} aria-label="Choisir une photo sur cet appareil" />
+            <Button
+              type="button"
+              variant="outline"
+              className="h-12 shrink-0 gap-2 text-base"
+              onClick={() => fileInput.current?.click()}
+              disabled={savingId !== null}
+            >
+              {savingId === UPLOAD_ID ? <LoaderCircle className="h-5 w-5 animate-spin" /> : <ImagePlus className="h-5 w-5" />}
+              {savingId === UPLOAD_ID ? 'Enregistrement…' : 'Ma propre photo'}
+            </Button>
+
             <div className="min-h-5 shrink-0 text-center text-xs text-muted-foreground" aria-live="polite">
               {waitSeconds > 0 && status === 'loading'
                 ? `Limite de recherches atteinte, reprise dans ${waitSeconds} s…`
@@ -297,7 +336,7 @@ export default function ImageWizard({ cards, onSaved, onClose }: ImageWizardProp
                 <SkipForward className="h-4 w-4" />
               </Button>
             </div>
-            <p className="shrink-0 text-center text-xs text-muted-foreground">Images fournies par Pixabay</p>
+            <p className="shrink-0 text-center text-xs text-muted-foreground">Recherche : images Pixabay · ou ta propre photo</p>
           </>
         )}
       </div>
