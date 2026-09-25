@@ -143,27 +143,51 @@ export function cardsNeedingImage<T extends { image_url: string | null }>(cards:
   return cards.filter((c) => !isOwnImage(c.image_url));
 }
 
-/** Supprime du stockage les fichiers désignés (ceux qui ne sont pas les nôtres sont ignorés). Sans erreur bloquante. */
-async function removeOwnFiles(urls: (string | null | undefined)[]): Promise<void> {
-  const paths = urls.map((u) => (u ? storagePathFromUrl(u) : null)).filter((p): p is string => Boolean(p));
-  if (paths.length === 0) return;
-  const { error } = await getSupabaseClient().storage.from(IMAGE_BUCKET).remove(paths);
-  if (error) console.warn('Fichiers image non supprimés (orphelins possibles) :', error.message);
+/**
+ * Supprime du stockage TOUT ce qui se rapporte aux cartes données : le dossier complet de chaque
+ * carte (l'image actuelle et d'éventuelles anciennes versions), pas seulement le fichier référencé.
+ * Chaque étape est retentée une fois. Retourne le nombre de fichiers qui n'ont pas pu être supprimés.
+ */
+async function removeCardFolders(cardIds: string[]): Promise<number> {
+  const bucket = getSupabaseClient().storage.from(IMAGE_BUCKET);
+  const withRetry = async <T>(fn: () => Promise<{ data: T | null; error: { message: string } | null }>) => {
+    let res = await fn();
+    if (res.error) res = await fn();
+    return res;
+  };
+  let failed = 0;
+  let next = 0;
+  const worker = async () => {
+    while (next < cardIds.length) {
+      const id = cardIds[next++];
+      const listed = await withRetry(() => bucket.list(id, { limit: 100 }));
+      if (listed.error) { failed++; continue; }
+      const paths = (listed.data ?? []).map((f) => `${id}/${f.name}`);
+      if (paths.length === 0) continue;
+      const removed = await withRetry(() => bucket.remove(paths));
+      if (removed.error) failed += paths.length;
+    }
+  };
+  await Promise.all(Array.from({ length: Math.min(6, cardIds.length) }, worker));
+  if (failed > 0) console.warn(`${failed} fichier(s) image non supprimé(s) (nettoyés au contrôle quotidien)`);
+  return failed;
 }
 
-/** Supprime une carte puis son fichier image : plus de fichier orphelin dans le stockage. */
-export async function deleteCardWithImage(card: { id: string; image_url: string | null }): Promise<void> {
+/** Supprime une carte puis tous ses fichiers image. Retourne le nombre de fichiers non supprimés. */
+export async function deleteCardWithImage(card: { id: string }): Promise<number> {
   await deleteCard(card.id);
-  await removeOwnFiles([card.image_url]);
+  return removeCardFolders([card.id]);
 }
 
 /**
- * Supprime un set puis les fichiers image de toutes ses cartes. La liste est relue en base au
- * moment de la suppression (elle est donc juste même si l'écran n'est plus à jour).
+ * Supprime un set puis les fichiers image de toutes ses cartes. La liste des cartes est relue en
+ * base au moment de la suppression (donc juste même si l'écran n'est plus à jour).
+ * Retourne le nombre de fichiers non supprimés (0 = aucun reste).
  */
-export async function deleteSetWithImages(setId: string): Promise<void> {
-  const { data, error } = await getSupabaseClient().from('vocab_cards').select('image_url').eq('set_id', setId).not('image_url', 'is', null);
+export async function deleteSetWithImages(setId: string): Promise<number> {
+  const { data, error } = await getSupabaseClient().from('vocab_cards').select('id, image_url').eq('set_id', setId).not('image_url', 'is', null);
   if (error) throw error;
+  const ids = (data ?? []).filter((c: { image_url: string | null }) => isOwnImage(c.image_url)).map((c: { id: string }) => c.id);
   await deleteSet(setId);
-  await removeOwnFiles((data ?? []).map((c: { image_url: string | null }) => c.image_url));
+  return removeCardFolders(ids);
 }

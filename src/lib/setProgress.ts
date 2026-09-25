@@ -22,6 +22,23 @@ export function countProgress(cards: VocabCard[], progress: Map<string, VocabPro
 }
 
 const starKey = (setId: string) => `nanimemo_starred_${setId}`;
+export const matchBestKey = (setId: string) => `nanimemo_match_best_${setId}`;
+
+/** Efface de l'appareil tout ce qui se rapporte à un set supprimé (étoiles, meilleur temps d'Associer). */
+export function forgetSetLocalData(setId: string): void {
+  try {
+    localStorage.removeItem(starKey(setId));
+    localStorage.removeItem(matchBestKey(setId));
+  } catch {
+    // stockage indisponible : rien à effacer
+  }
+}
+
+/** Retire une carte supprimée de la liste des étoiles de son set. */
+export function forgetCardStar(setId: string, cardId: string): void {
+  const starred = loadStarred(setId);
+  if (starred.delete(cardId)) saveStarred(setId, starred);
+}
 
 /** Étoiles d'un set, mémorisées sur l'appareil (pas de synchronisation entre appareils). */
 export function loadStarred(setId: string): Set<string> {

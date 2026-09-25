@@ -107,8 +107,8 @@ jobs:
           PY
 
       - uses: actions/checkout@v4
-      - name: Fichiers image orphelins (avertissement seulement)
+      - name: Nettoyage des fichiers image orphelins (> 24 h)
         env:
           SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
           SUPABASE_KEY: ${{ secrets.VITE_SUPABASE_PUBLISHABLE_KEY }}
-        run: node scripts/orphans.mjs
+        run: node scripts/orphans.mjs --apply

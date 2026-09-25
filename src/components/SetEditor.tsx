@@ -9,6 +9,7 @@ import LessonMode from '@/components/LessonMode';
 import ImageWizard from '@/components/ImageWizard';
 import SetOverview from '@/components/set/SetOverview';
 import ModeTabs, { MODE_TABS } from '@/components/study/ModeTabs';
+import { forgetCardStar, forgetSetLocalData } from '@/lib/setProgress';
 import { cardsNeedingImage, deleteCardWithImage, deleteSetWithImages, removeCardImage } from '@/lib/cardImages';
 import { fetchCards, fetchProgress, insertCards } from '@/lib/vocabApi';
 import type { VocabCard, VocabProgress, VocabSet, StudyMode } from '@/types/vocab';
@@ -73,7 +74,9 @@ export default function SetEditor({ set, userId, onBack }: SetEditorProps) {
   const handleDeleteCard = async (card: VocabCard) => {
     if (!window.confirm(`Supprimer la carte "${card.term}" ?`)) return;
     try {
-      await deleteCardWithImage(card);
+      const leftover = await deleteCardWithImage(card);
+      forgetCardStar(set.id, card.id);
+      if (leftover > 0) toast.warning('Carte supprimée, mais une image n’a pas pu être effacée du stockage : elle sera nettoyée automatiquement.');
       setCards((prev) => prev.filter((c) => c.id !== card.id));
     } catch {
       toast.error('La suppression a échoué.');
@@ -98,7 +101,9 @@ export default function SetEditor({ set, userId, onBack }: SetEditorProps) {
   const handleDeleteSet = async () => {
     if (!window.confirm(`Supprimer définitivement le set "${set.title}" et ses ${cards.length} carte(s) ?`)) return;
     try {
-      await deleteSetWithImages(set.id);
+      const leftover = await deleteSetWithImages(set.id);
+      forgetSetLocalData(set.id);
+      if (leftover > 0) toast.warning(`Set supprimé, mais ${leftover} image(s) n’ont pas pu être effacées du stockage : elles seront nettoyées automatiquement.`);
       onBack();
     } catch {
       toast.error('La suppression du set a échoué.');

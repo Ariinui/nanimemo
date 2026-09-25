@@ -3,6 +3,7 @@ import { PartyPopper, RotateCcw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import StudyTopBar from '@/components/study/StudyTopBar';
 import { shuffle } from '@/lib/quiz';
+import { matchBestKey } from '@/lib/setProgress';
 import type { VocabCard } from '@/types/vocab';
 
 interface MatchModeProps {
@@ -26,10 +27,6 @@ function buildTiles(cards: VocabCard[]): Tile[] {
     tiles.push({ key: `${card.id}-def`, cardId: card.id, text: card.definition });
   });
   return shuffle(tiles);
-}
-
-function bestTimeKey(setId: string) {
-  return `nanimemo_match_best_${setId}`;
 }
 
 // Taille du texte d'une tuile selon sa longueur : une phrase longue reste entièrement dans
@@ -59,7 +56,7 @@ export default function MatchMode({ cards, onBack }: MatchModeProps) {
   useEffect(() => {
     if (!setId) return;
     try {
-      const stored = localStorage.getItem(bestTimeKey(setId));
+      const stored = localStorage.getItem(matchBestKey(setId));
       if (stored) setBestTime(parseFloat(stored));
     } catch {
       // localStorage indisponible (navigation privée) — pas grave, juste pas de record
@@ -112,7 +109,7 @@ export default function MatchMode({ cards, onBack }: MatchModeProps) {
         if (newBest && setId) {
           setBestTime(elapsed);
           try {
-            localStorage.setItem(bestTimeKey(setId), String(elapsed));
+            localStorage.setItem(matchBestKey(setId), String(elapsed));
           } catch {
             // pas grave si indisponible
           }
