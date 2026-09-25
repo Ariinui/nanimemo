@@ -5,6 +5,7 @@ import {
   Brain,
   BrainCircuit,
   Check,
+  ChevronDown,
   FileCheck2,
   ImagePlus,
   Layers,
@@ -14,13 +15,15 @@ import {
   Pencil,
   Plus,
   Shuffle,
+  Star,
   Trash2,
-  X,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import PreviewCarousel from '@/components/set/PreviewCarousel';
 import ProgressSummary from '@/components/set/ProgressSummary';
+import ReviewPreview from '@/components/set/ReviewPreview';
 import TermCard from '@/components/set/TermCard';
+import { formatCreatedFr } from '@/lib/relativeTime';
 import { cardStatus, countProgress, loadStarred, saveStarred, type CardStatus } from '@/lib/setProgress';
 import type { StudyMode, VocabCard, VocabProgress, VocabSet } from '@/types/vocab';
 
@@ -32,13 +35,22 @@ const MODES: { mode: StudyMode; label: string; icon: typeof Layers; color: strin
   { mode: 'lesson', label: 'Leçon', icon: BookOpen, color: 'text-rose-400' },
 ];
 
-const STATUS_LABELS: Record<CardStatus, string> = {
-  new: 'Pas encore étudiée',
-  learning: "En cours d'apprentissage",
-  mastered: 'Maîtrisés',
+// Regroupement « Vos stats » : un bloc par état, chacun avec son message d'encouragement
+const GROUPS: { status: CardStatus; title: string; hint: string; color: string }[] = [
+  { status: 'new', title: 'Pas encore étudiés', hint: "Vous n'avez pas encore étudié ces termes.", color: 'text-muted-foreground' },
+  { status: 'learning', title: 'En cours', hint: 'Vous avez commencé à étudier ces termes. Continuez le bel effort !', color: 'text-warning' },
+  { status: 'mastered', title: 'Maîtrisés', hint: 'Vous maîtrisez ces termes. Bravo !', color: 'text-success' },
+];
+
+type ViewOrder = 'stats' | 'origin' | 'alpha';
+
+const VIEW_LABELS: Record<ViewOrder, string> = {
+  stats: 'Vos stats',
+  origin: "Ordre d'origine",
+  alpha: 'Alphabétique',
 };
 
-type SortOrder = 'origin' | 'alpha';
+type MenuName = 'actions' | 'sort' | 'activity';
 
 interface SetOverviewProps {
   set: VocabSet;
@@ -74,44 +86,92 @@ export default function SetOverview({
   onDeleteCard,
   onDeleteSet,
 }: SetOverviewProps) {
-  const [menu, setMenu] = useState<'actions' | 'sort' | null>(null);
+  const [menu, setMenu] = useState<MenuName | null>(null);
   const [editing, setEditing] = useState(false);
-  const [sort, setSort] = useState<SortOrder>('origin');
+  const [view, setView] = useState<ViewOrder>('origin');
   const [starOnly, setStarOnly] = useState(false);
-  const [statusFilter, setStatusFilter] = useState<CardStatus | null>(null);
+  const [hideDefinitions, setHideDefinitions] = useState(false);
   const [starred, setStarred] = useState<Set<string>>(() => loadStarred(set.id));
   const termsRef = useRef<HTMLDivElement>(null);
 
   const counts = useMemo(() => countProgress(cards, progress), [cards, progress]);
 
-  const visible = useMemo(() => {
+  const flatList = useMemo(() => {
     let list = cards;
-    if (statusFilter) list = list.filter((c) => cardStatus(progress.get(c.id)) === statusFilter);
     if (starOnly) list = list.filter((c) => starred.has(c.id));
-    if (sort === 'alpha') list = [...list].sort((a, b) => a.term.localeCompare(b.term, 'fr', { sensitivity: 'base' }));
+    if (view === 'alpha') list = [...list].sort((a, b) => a.term.localeCompare(b.term, 'fr', { sensitivity: 'base' }));
     return list;
-  }, [cards, progress, statusFilter, starOnly, starred, sort]);
+  }, [cards, starOnly, starred, view]);
 
-  const toggleStar = (id: string) =>
+  const groups = useMemo(
+    () =>
+      GROUPS.map((g) => ({ ...g, cards: cards.filter((c) => cardStatus(progress.get(c.id)) === g.status) })).filter(
+        (g) => g.cards.length > 0,
+      ),
+    [cards, progress],
+  );
+
+  const grouped = view === 'stats' && !starOnly;
+
+  const updateStars = (updater: (prev: Set<string>) => Set<string>) =>
     setStarred((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
+      const next = updater(prev);
       saveStarred(set.id, next);
       return next;
     });
 
+  const toggleStar = (id: string) =>
+    updateStars((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+
+  // « Sélectionner N » : étoile (ou retire l'étoile de) tous les termes d'un groupe
+  const toggleGroupStars = (groupCards: VocabCard[]) =>
+    updateStars((prev) => {
+      const next = new Set(prev);
+      const allStarred = groupCards.every((c) => next.has(c.id));
+      for (const c of groupCards) {
+        if (allStarred) next.delete(c.id);
+        else next.add(c.id);
+      }
+      return next;
+    });
+
   const selectStatus = (status: CardStatus) => {
-    setStatusFilter((current) => (current === status ? null : status));
-    requestAnimationFrame(() => termsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }));
+    setView('stats');
+    setStarOnly(false);
+    requestAnimationFrame(() =>
+      requestAnimationFrame(() => {
+        const target = document.getElementById(`group-${status}`) ?? termsRef.current;
+        target?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }),
+    );
   };
 
   const closeMenu = () => setMenu(null);
   const hasCards = cards.length > 0;
+  const createdLabel = formatCreatedFr(set.created_at);
+
+  const renderCard = (card: VocabCard) => (
+    <TermCard
+      key={`${card.id}-${hideDefinitions}`}
+      card={card}
+      starred={starred.has(card.id)}
+      editing={editing}
+      definitionHidden={hideDefinitions}
+      onToggleStar={() => toggleStar(card.id)}
+      onChangeImage={() => onChangeImage(card)}
+      onRemoveImage={() => onRemoveImage(card)}
+      onDelete={() => onDeleteCard(card)}
+    />
+  );
 
   return (
-    <div className="mx-auto w-full max-w-3xl px-4 pb-32">
-      {menu && <div className="fixed inset-0 z-30" onClick={closeMenu} aria-hidden="true" />}
+    <div className="mx-auto w-full max-w-3xl px-4 pb-36">
+      {menu && <div className="fixed inset-0 z-10" onClick={closeMenu} aria-hidden="true" />}
 
       <div className="sticky top-0 z-20 -mx-4 flex h-14 items-center justify-between bg-background/90 px-2 backdrop-blur">
         <Button variant="ghost" size="icon" className="h-11 w-11 rounded-full" onClick={onBack} aria-label="Retour">
@@ -205,39 +265,58 @@ export default function SetOverview({
             </button>
           )}
 
+          <div className="mt-8 flex items-center gap-3">
+            <span className="bg-brand-gradient flex h-12 w-12 shrink-0 items-center justify-center rounded-full">
+              <BrainCircuit className="h-6 w-6 text-white" />
+            </span>
+            <div className="min-w-0">
+              <p className="text-xs text-muted-foreground">Créée par</p>
+              <p className="text-base font-semibold leading-tight">Vous</p>
+              {createdLabel && <p className="text-xs text-muted-foreground">{createdLabel}</p>}
+            </div>
+          </div>
+
           {hasCards && (
             <div className="mt-8">
-              <ProgressSummary counts={counts} active={statusFilter} onSelect={selectStatus} />
+              <ProgressSummary counts={counts} onSelect={selectStatus} />
+            </div>
+          )}
+
+          {hasCards && (
+            <div className="mt-8">
+              <ReviewPreview cards={cards} onStudy={() => onOpenMode('learn')} />
             </div>
           )}
 
           <div ref={termsRef} className="mt-8 scroll-mt-16">
-            <div className="flex items-center justify-between">
-              <h2 className="text-xl font-bold">Termes</h2>
-              <div className="relative">
+            <div className="flex items-center justify-between gap-2">
+              <h2 className="text-xl font-bold">
+                Termes dans cette liste <span className="tabular-nums">({cards.length})</span>
+              </h2>
+              <div className="relative shrink-0">
                 <button
                   type="button"
                   onClick={() => setMenu(menu === 'sort' ? null : 'sort')}
                   aria-haspopup="menu"
                   aria-expanded={menu === 'sort'}
-                  className="flex min-h-11 items-center gap-2 rounded-xl px-2 text-base font-semibold"
+                  className="flex min-h-11 items-center gap-1.5 rounded-xl px-2 text-base font-semibold"
                 >
-                  {starOnly ? 'Étoilés' : sort === 'alpha' ? 'Alphabétique' : "Ordre d'origine"}
+                  {starOnly ? 'Étoilés' : VIEW_LABELS[view]}
                   <ListFilter className="h-5 w-5" />
                 </button>
                 {menu === 'sort' && (
                   <div role="menu" className="shadow-glow absolute right-0 top-12 z-40 w-64 rounded-2xl border bg-card p-1.5">
-                    {([['origin', "Ordre d'origine"], ['alpha', 'Alphabétique']] as const).map(([value, label]) => (
+                    {(['stats', 'origin', 'alpha'] as const).map((value) => (
                       <button
                         key={value}
                         type="button"
                         role="menuitemradio"
-                        aria-checked={sort === value}
+                        aria-checked={view === value}
                         className={menuItem}
-                        onClick={() => { setSort(value); closeMenu(); }}
+                        onClick={() => { setView(value); closeMenu(); }}
                       >
-                        <Check className={`h-5 w-5 ${sort === value ? '' : 'opacity-0'}`} />
-                        {label}
+                        <Check className={`h-5 w-5 ${view === value ? '' : 'opacity-0'}`} />
+                        {VIEW_LABELS[value]}
                       </button>
                     ))}
                     <button
@@ -255,23 +334,11 @@ export default function SetOverview({
               </div>
             </div>
 
-            {(statusFilter || editing) && (
-              <div className="mt-2 flex flex-wrap gap-2">
-                {statusFilter && (
-                  <button
-                    type="button"
-                    onClick={() => setStatusFilter(null)}
-                    className="flex min-h-11 items-center gap-2 rounded-full border border-primary/40 bg-primary/10 px-4 text-sm font-semibold"
-                  >
-                    {STATUS_LABELS[statusFilter]}
-                    <X className="h-4 w-4" />
-                  </button>
-                )}
-                {editing && (
-                  <span className="flex min-h-11 items-center rounded-full bg-warning/15 px-4 text-sm font-semibold text-warning">
-                    Mode modification
-                  </span>
-                )}
+            {editing && (
+              <div className="mt-2">
+                <span className="inline-flex min-h-11 items-center rounded-full bg-warning/15 px-4 text-sm font-semibold text-warning">
+                  Mode modification
+                </span>
               </div>
             )}
 
@@ -283,23 +350,36 @@ export default function SetOverview({
                   Importer des termes
                 </Button>
               </div>
-            ) : visible.length === 0 ? (
-              <p className="mt-6 text-center text-base text-muted-foreground">Aucun terme ne correspond à ce filtre.</p>
-            ) : (
-              <div className="mt-3 space-y-3">
-                {visible.map((card) => (
-                  <TermCard
-                    key={card.id}
-                    card={card}
-                    starred={starred.has(card.id)}
-                    editing={editing}
-                    onToggleStar={() => toggleStar(card.id)}
-                    onChangeImage={() => onChangeImage(card)}
-                    onRemoveImage={() => onRemoveImage(card)}
-                    onDelete={() => onDeleteCard(card)}
-                  />
-                ))}
+            ) : grouped ? (
+              <div className="mt-3 space-y-8">
+                {groups.map((g) => {
+                  const allStarred = g.cards.every((c) => starred.has(c.id));
+                  return (
+                    <section key={g.status} id={`group-${g.status}`} className="scroll-mt-16" aria-labelledby={`group-title-${g.status}`}>
+                      <div className="flex items-center justify-between gap-3">
+                        <h3 id={`group-title-${g.status}`} className={`min-w-0 text-lg font-bold ${g.color}`}>
+                          {g.title} <span className="tabular-nums">({g.cards.length})</span>
+                        </h3>
+                        <button
+                          type="button"
+                          onClick={() => toggleGroupStars(g.cards)}
+                          aria-pressed={allStarred}
+                          className="flex min-h-11 shrink-0 items-center gap-2 rounded-full border bg-secondary/70 px-4 text-sm font-semibold transition-colors hover:bg-secondary"
+                        >
+                          <Star className={`h-4 w-4 ${allStarred ? 'fill-warning text-warning' : ''}`} />
+                          {allStarred ? 'Désélectionner' : 'Sélectionner'} {g.cards.length}
+                        </button>
+                      </div>
+                      <p className="mt-1 text-sm text-muted-foreground">{g.hint}</p>
+                      <div className="mt-3 space-y-3">{g.cards.map(renderCard)}</div>
+                    </section>
+                  );
+                })}
               </div>
+            ) : flatList.length === 0 ? (
+              <p className="mt-6 text-center text-base text-muted-foreground">Aucun terme étoilé pour l'instant.</p>
+            ) : (
+              <div className="mt-3 space-y-3">{flatList.map(renderCard)}</div>
             )}
           </div>
         </>
@@ -308,9 +388,42 @@ export default function SetOverview({
       {hasCards && !loading && (
         <div className="pointer-events-none fixed inset-x-0 bottom-0 z-20 bg-gradient-to-t from-background from-55% to-transparent pt-10">
           <div className="mx-auto w-full max-w-3xl px-4 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
-            <Button className="pointer-events-auto h-14 w-full rounded-full text-base" onClick={() => onOpenMode('learn')}>
-              Étudier cette liste
-            </Button>
+            <div className="pointer-events-auto relative flex gap-2 rounded-full border bg-card/95 p-1.5 shadow-glow backdrop-blur">
+              <button
+                type="button"
+                onClick={() => setHideDefinitions((v) => !v)}
+                aria-pressed={hideDefinitions}
+                className="h-14 flex-1 rounded-full border px-3 text-sm font-semibold leading-tight transition-colors hover:bg-white/5"
+              >
+                {hideDefinitions ? 'Afficher les définitions' : 'Cacher les définitions'}
+              </button>
+              <button
+                type="button"
+                onClick={() => setMenu(menu === 'activity' ? null : 'activity')}
+                aria-haspopup="menu"
+                aria-expanded={menu === 'activity'}
+                className="bg-brand-gradient flex h-14 flex-1 items-center justify-center gap-1.5 rounded-full px-3 text-sm font-semibold leading-tight text-primary-foreground"
+              >
+                <span>Étudier avec une activité</span>
+                <ChevronDown className={`h-4 w-4 shrink-0 transition-transform ${menu === 'activity' ? 'rotate-180' : ''}`} />
+              </button>
+              {menu === 'activity' && (
+                <div role="menu" className="shadow-glow absolute bottom-full right-0 mb-2 w-72 rounded-2xl border bg-card p-1.5">
+                  {MODES.filter((m) => m.mode !== 'lesson').map(({ mode, label, icon: Icon, color }) => (
+                    <button
+                      key={mode}
+                      type="button"
+                      role="menuitem"
+                      className={menuItem}
+                      onClick={() => { closeMenu(); onOpenMode(mode); }}
+                    >
+                      <Icon className={`h-5 w-5 ${color}`} />
+                      {label}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
         </div>
       )}

@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { ImagePlus, Star, Trash2, Volume2 } from 'lucide-react';
 import CardImage from '@/components/study/CardImage';
 import { canSpeak, speak } from '@/lib/setProgress';
@@ -7,6 +8,8 @@ interface TermCardProps {
   card: VocabCard;
   starred: boolean;
   editing: boolean;
+  /** « Cacher les définitions » : la définition reste masquée tant qu'on ne la touche pas. */
+  definitionHidden?: boolean;
   onToggleStar: () => void;
   onChangeImage: () => void;
   onRemoveImage: () => void;
@@ -16,7 +19,10 @@ interface TermCardProps {
 const iconButton =
   'flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-foreground/90 transition-colors hover:bg-white/10';
 
-export default function TermCard({ card, starred, editing, onToggleStar, onChangeImage, onRemoveImage, onDelete }: TermCardProps) {
+export default function TermCard({ card, starred, editing, definitionHidden = false, onToggleStar, onChangeImage, onRemoveImage, onDelete }: TermCardProps) {
+  const [revealed, setRevealed] = useState(false);
+  const masked = definitionHidden && !revealed && !editing;
+
   return (
     <article className="rounded-2xl border bg-card px-4 pb-4 pt-2.5">
       <header className="flex items-start gap-1">
@@ -65,7 +71,17 @@ export default function TermCard({ card, starred, editing, onToggleStar, onChang
         </div>
       )}
 
-      <p className={`break-words text-lg leading-snug text-foreground/95 ${card.image_url ? 'mt-3' : 'mt-2'}`}>{card.definition}</p>
+      {masked ? (
+        <button
+          type="button"
+          onClick={() => setRevealed(true)}
+          className={`flex min-h-12 w-full items-center justify-center rounded-xl border border-dashed text-base font-medium text-muted-foreground transition-colors hover:bg-white/5 ${card.image_url ? 'mt-3' : 'mt-2'}`}
+        >
+          Toucher pour afficher la définition
+        </button>
+      ) : (
+        <p className={`break-words text-lg leading-snug text-foreground/95 ${card.image_url ? 'mt-3' : 'mt-2'}`}>{card.definition}</p>
+      )}
     </article>
   );
 }

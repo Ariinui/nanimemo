@@ -3,7 +3,6 @@ import type { CardStatus, ProgressCounts } from '@/lib/setProgress';
 
 interface ProgressSummaryProps {
   counts: ProgressCounts;
-  active: CardStatus | null;
   onSelect: (status: CardStatus) => void;
 }
 
@@ -37,7 +36,7 @@ function Ring({ value, total, color, track }: { value: number; total: number; co
   );
 }
 
-export default function ProgressSummary({ counts, active, onSelect }: ProgressSummaryProps) {
+export default function ProgressSummary({ counts, onSelect }: ProgressSummaryProps) {
   return (
     <section aria-labelledby="progress-title">
       <h2 id="progress-title" className="text-xl font-bold">Votre progression</h2>
@@ -54,10 +53,7 @@ export default function ProgressSummary({ counts, active, onSelect }: ProgressSu
               type="button"
               onClick={() => onSelect(status)}
               disabled={value === 0}
-              aria-pressed={active === status}
-              className={`flex min-h-[4.5rem] w-full items-center gap-4 rounded-2xl border px-4 py-2.5 text-left transition-colors disabled:cursor-default ${
-                active === status ? 'border-primary bg-primary/10' : 'bg-secondary/70 hover:bg-secondary'
-              }`}
+              className="flex min-h-[4.5rem] w-full items-center gap-4 rounded-2xl border bg-secondary/70 px-4 py-2.5 text-left transition-colors hover:bg-secondary disabled:cursor-default disabled:hover:bg-secondary/70"
             >
               <Ring value={value} total={counts.total} color={color} track={track} />
               <span className={`flex-1 text-lg font-semibold ${status === 'new' || value === 0 ? 'text-muted-foreground' : ''}`}>
