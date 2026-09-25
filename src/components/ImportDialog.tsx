@@ -93,9 +93,9 @@ export default function ImportDialog({ open, onOpenChange, onImport }: ImportDia
 
   return (
     <Dialog open={open} onOpenChange={(next) => { if (!next) reset(); onOpenChange(next); }}>
-      <DialogContent className="max-h-[85vh] max-w-2xl overflow-y-auto">
+      <DialogContent className="sm:max-w-2xl">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
+          <DialogTitle className="flex items-center gap-2 pr-10">
             <Copy className="h-5 w-5" />
             Importer vos données
           </DialogTitle>
@@ -107,9 +107,9 @@ export default function ImportDialog({ open, onOpenChange, onImport }: ImportDia
         </DialogHeader>
 
         <Tabs value={mode} onValueChange={(v) => handleModeChange(v as ImportMode)}>
-          <TabsList>
-            <TabsTrigger value="pairs">Paires terme/définition</TabsTrigger>
-            <TabsTrigger value="cloze">Texte (phrases à trous)</TabsTrigger>
+          <TabsList className="grid h-auto w-full grid-cols-2">
+            <TabsTrigger value="pairs" className="h-auto min-h-11 whitespace-normal py-2 text-center leading-tight">Paires terme/définition</TabsTrigger>
+            <TabsTrigger value="cloze" className="h-auto min-h-11 whitespace-normal py-2 text-center leading-tight">Texte (phrases à trous)</TabsTrigger>
           </TabsList>
         </Tabs>
 
@@ -121,30 +121,30 @@ export default function ImportDialog({ open, onOpenChange, onImport }: ImportDia
               ? 'Mot 1\tDéfinition 1\nMot 2\tDéfinition 2\nMot 3\tDéfinition 3'
               : 'Collez ici un texte suivi (plusieurs phrases). Chaque phrase devient une carte.'
           }
-          className="min-h-40 font-mono text-sm"
+          className="min-h-40 font-mono text-base"
         />
 
         {mode === 'pairs' && (
-        <div className="grid grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 sm:gap-6">
           <div>
             <p className="mb-2 text-sm font-medium">Entre le terme et la définition</p>
             <RadioGroup
               value={settings.termDefSeparator}
               onValueChange={(v) => updateSettings({ termDefSeparator: v as ImportSettings['termDefSeparator'] })}
             >
-              <div className="flex items-center gap-2">
-                <RadioGroupItem value="tab" id="td-tab" />
-                <Label htmlFor="td-tab">Tab</Label>
+              <div className="flex min-h-11 items-center gap-3">
+                <RadioGroupItem value="tab" id="td-tab" className="relative size-5 before:absolute before:-inset-3 before:content-['']" />
+                <Label className="min-h-11 flex-1 items-center text-base" htmlFor="td-tab">Tab</Label>
               </div>
-              <div className="flex items-center gap-2">
-                <RadioGroupItem value="comma" id="td-comma" />
-                <Label htmlFor="td-comma">Virgule</Label>
+              <div className="flex min-h-11 items-center gap-3">
+                <RadioGroupItem value="comma" id="td-comma" className="relative size-5 before:absolute before:-inset-3 before:content-['']" />
+                <Label className="min-h-11 flex-1 items-center text-base" htmlFor="td-comma">Virgule</Label>
               </div>
-              <div className="flex items-center gap-2">
-                <RadioGroupItem value="custom" id="td-custom" />
+              <div className="flex min-h-11 items-center gap-3">
+                <RadioGroupItem value="custom" id="td-custom" className="relative size-5 before:absolute before:-inset-3 before:content-['']" />
                 <Input
                   id="td-custom"
-                  className="h-8 w-28"
+                  className="h-11 min-w-0 flex-1 text-base"
                   value={settings.termDefCustom}
                   placeholder="Personnalisé"
                   onFocus={() => updateSettings({ termDefSeparator: 'custom' })}
@@ -160,19 +160,19 @@ export default function ImportDialog({ open, onOpenChange, onImport }: ImportDia
               value={settings.cardSeparator}
               onValueChange={(v) => updateSettings({ cardSeparator: v as ImportSettings['cardSeparator'] })}
             >
-              <div className="flex items-center gap-2">
-                <RadioGroupItem value="newline" id="c-newline" />
-                <Label htmlFor="c-newline">Nouvelle rangée</Label>
+              <div className="flex min-h-11 items-center gap-3">
+                <RadioGroupItem value="newline" id="c-newline" className="relative size-5 before:absolute before:-inset-3 before:content-['']" />
+                <Label className="min-h-11 flex-1 items-center text-base" htmlFor="c-newline">Nouvelle rangée</Label>
               </div>
-              <div className="flex items-center gap-2">
-                <RadioGroupItem value="semicolon" id="c-semicolon" />
-                <Label htmlFor="c-semicolon">Point-virgule</Label>
+              <div className="flex min-h-11 items-center gap-3">
+                <RadioGroupItem value="semicolon" id="c-semicolon" className="relative size-5 before:absolute before:-inset-3 before:content-['']" />
+                <Label className="min-h-11 flex-1 items-center text-base" htmlFor="c-semicolon">Point-virgule</Label>
               </div>
-              <div className="flex items-center gap-2">
-                <RadioGroupItem value="custom" id="c-custom" />
+              <div className="flex min-h-11 items-center gap-3">
+                <RadioGroupItem value="custom" id="c-custom" className="relative size-5 before:absolute before:-inset-3 before:content-['']" />
                 <Input
                   id="c-custom"
-                  className="h-8 w-28"
+                  className="h-11 min-w-0 flex-1 text-base"
                   value={settings.cardCustom}
                   placeholder="Personnalisé"
                   onFocus={() => updateSettings({ cardSeparator: 'custom' })}
@@ -185,7 +185,7 @@ export default function ImportDialog({ open, onOpenChange, onImport }: ImportDia
         )}
 
         <div>
-          <div className="mb-2 flex items-center justify-between">
+          <div className="mb-2 flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
             <p className="text-sm font-medium">Aperçu</p>
             <p className="text-xs text-muted-foreground">
               {result.validCount} carte{result.validCount !== 1 ? 's' : ''} valide{result.validCount !== 1 ? 's' : ''}
@@ -205,10 +205,10 @@ export default function ImportDialog({ open, onOpenChange, onImport }: ImportDia
                   return (
                     <div
                       key={i}
-                      className="flex items-center gap-2 rounded-lg bg-destructive/10 px-3 py-2 text-sm text-destructive"
+                      className="flex items-start gap-2 rounded-lg bg-destructive/10 px-3 py-2.5 text-sm text-destructive"
                     >
-                      <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
-                      <span className="flex-1 truncate">
+                      <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+                      <span className="min-w-0 flex-1 break-words">
                         {row.raw}{' '}
                         <span className="text-xs opacity-70">
                           (
@@ -231,12 +231,12 @@ export default function ImportDialog({ open, onOpenChange, onImport }: ImportDia
                     className={`flex items-start gap-3 rounded-lg border p-3 ${row.duplicate ? 'border-amber-500/40' : ''}`}
                   >
                     <span className="mt-2 shrink-0 text-xs font-medium text-muted-foreground">{i + 1}</span>
-                    <div className="grid flex-1 grid-cols-2 gap-2">
+                    <div className="grid min-w-0 flex-1 grid-cols-1 gap-2 sm:grid-cols-2">
                       <div>
                         <Input
                           value={current.term}
                           onChange={(e) => editRow(i, { term: e.target.value }, current)}
-                          className="h-9"
+                          className="h-11 text-base"
                         />
                         <p className="mt-1 text-xs uppercase tracking-wide text-muted-foreground">Terme</p>
                       </div>
@@ -244,7 +244,7 @@ export default function ImportDialog({ open, onOpenChange, onImport }: ImportDia
                         <Input
                           value={current.definition}
                           onChange={(e) => editRow(i, { definition: e.target.value }, current)}
-                          className="h-9"
+                          className="h-11 text-base"
                         />
                         <p className="mt-1 text-xs uppercase tracking-wide text-muted-foreground">
                           Définition{row.duplicate && ' · doublon'}
@@ -258,11 +258,11 @@ export default function ImportDialog({ open, onOpenChange, onImport }: ImportDia
           )}
         </div>
 
-        <DialogFooter>
-          <Button variant="outline" onClick={() => { reset(); onOpenChange(false); }}>
+        <DialogFooter className="gap-2">
+          <Button variant="outline" className="h-12" onClick={() => { reset(); onOpenChange(false); }}>
             Annuler l'importation
           </Button>
-          <Button disabled={result.validCount === 0} onClick={handleImport}>
+          <Button className="h-12" disabled={result.validCount === 0} onClick={handleImport}>
             Importer {result.validCount > 0 && `(${result.validCount})`}
           </Button>
         </DialogFooter>

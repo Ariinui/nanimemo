@@ -190,7 +190,7 @@ export default function SetOverview({
             <MoreVertical className="h-5 w-5" />
           </Button>
           {menu === 'actions' && (
-            <div role="menu" className="shadow-glow absolute right-0 top-12 z-40 w-72 rounded-2xl border bg-card p-1.5">
+            <div role="menu" className="shadow-glow absolute right-0 top-12 z-40 w-72 max-w-[calc(100vw-24px)] rounded-2xl border bg-card p-1.5">
               <button type="button" role="menuitem" className={menuItem} onClick={() => { closeMenu(); setEditing((v) => !v); }}>
                 {editing ? <Check className="h-5 w-5" /> : <Pencil className="h-5 w-5" />}
                 {editing ? 'Terminer la modification' : 'Modifier les termes'}
@@ -305,7 +305,7 @@ export default function SetOverview({
                   <ListFilter className="h-5 w-5" />
                 </button>
                 {menu === 'sort' && (
-                  <div role="menu" className="shadow-glow absolute right-0 top-12 z-40 w-64 rounded-2xl border bg-card p-1.5">
+                  <div role="menu" className="shadow-glow absolute right-0 top-12 z-40 w-64 max-w-[calc(100vw-24px)] rounded-2xl border bg-card p-1.5">
                     {(['stats', 'origin', 'alpha'] as const).map((value) => (
                       <button
                         key={value}
@@ -408,7 +408,7 @@ export default function SetOverview({
                 <ChevronDown className={`h-4 w-4 shrink-0 transition-transform ${menu === 'activity' ? 'rotate-180' : ''}`} />
               </button>
               {menu === 'activity' && (
-                <div role="menu" className="shadow-glow absolute bottom-full right-0 mb-2 w-72 rounded-2xl border bg-card p-1.5">
+                <div role="menu" className="shadow-glow absolute bottom-full right-0 mb-2 w-72 max-w-[calc(100vw-24px)] rounded-2xl border bg-card p-1.5">
                   {MODES.filter((m) => m.mode !== 'lesson').map(({ mode, label, icon: Icon, color }) => (
                     <button
                       key={mode}
