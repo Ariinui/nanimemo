@@ -14,6 +14,28 @@ permissions:
   contents: read
 
 jobs:
+  # GitHub désactive les workflows planifiés après 60 jours sans activité dans le dépôt.
+  # Chaque exécution réactive ici les deux workflows par l'API (sans commit), ce qui
+  # remet le compteur à zéro. Le second workflow (keepalive-watchdog.yml) fait pareil
+  # avec un autre horaire : chacun rattrape l'autre.
+  stay-enabled:
+    runs-on: ubuntu-latest
+    permissions:
+      actions: write
+    steps:
+      - name: Réactiver les workflows planifiés
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          for wf in keepalive-backup.yml keepalive-watchdog.yml; do
+            curl -sS --fail --retry 3 --retry-delay 5 -m 30 -X PUT \
+              -H "Authorization: Bearer $GH_TOKEN" -H "Accept: application/vnd.github+json" \
+              "https://api.github.com/repos/$REPO/actions/workflows/$wf/enable"
+            echo "$wf : réactivé"
+          done
+
   backup:
     runs-on: ubuntu-latest
     steps:
