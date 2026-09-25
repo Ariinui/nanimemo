@@ -1,5 +1,8 @@
 /** @type {import('tailwindcss').Config} */
 module.exports = {
+  // Le survol (hover:) ne s'applique qu'aux appareils qui en ont un vrai (souris). Sur écran
+  // tactile, il restait « collé » sur le dernier bouton touché (bordure verte persistante).
+  future: { hoverOnlyWhenSupported: true },
   darkMode: ["class"],
   content: ['./index.html', './src/**/*.{js,ts,jsx,tsx}'],
   theme: {

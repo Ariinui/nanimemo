@@ -173,7 +173,8 @@ export default function LearnMode({ cards, userId, onBack }: LearnModeProps) {
         <p className={`${fitTextClass(questionText)} break-words font-bold leading-snug`}>{questionText}</p>
       </div>
 
-      <div className={`flex ${question.type === 'written' ? 'flex-none' : 'flex-[3]'} flex-col gap-2.5`}>
+      {/* key : à chaque question les boutons sont recréés, aucun état tactile/focus ne survit */}
+      <div key={`${currentCard.id}-${stats.correct + stats.wrong}`} className={`flex ${question.type === 'written' ? 'flex-none' : 'flex-[3]'} flex-col gap-2.5`}>
         {question.type === 'qcm' &&
           question.choices.map((choice, i) => {
             const isCorrectChoice = i === question.correctIndex;
