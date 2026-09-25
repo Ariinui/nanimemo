@@ -1,0 +1,8 @@
+name = "nanimemo-keepalive"
+main = "src/index.js"
+compatibility_date = "2026-01-01"
+workers_dev = false
+
+# Ping quotidien de Supabase (anti-pause 7 jours), indépendant de GitHub Actions.
+[triggers]
+crons = ["23 9 * * *"]
