@@ -32,6 +32,16 @@ function bestTimeKey(setId: string) {
   return `nanimemo_match_best_${setId}`;
 }
 
+// Taille du texte d'une tuile selon sa longueur : une phrase longue reste entièrement dans
+// sa tuile au lieu de la faire grossir (et la grille dépasser de l'écran).
+function tileTextClass(text: string): string {
+  const len = text.length;
+  if (len > 80) return 'text-[0.75rem]';
+  if (len > 45) return 'text-[0.8rem] max-[399px]:text-[0.75rem]';
+  if (len > 20) return 'text-[0.9rem] max-[399px]:text-[0.8rem]';
+  return 'text-base max-[399px]:text-[0.9rem]';
+}
+
 export default function MatchMode({ cards, onBack }: MatchModeProps) {
   const [tiles, setTiles] = useState<Tile[]>(() => buildTiles(cards));
   const [selected, setSelected] = useState<string | null>(null);
@@ -164,7 +174,7 @@ export default function MatchMode({ cards, onBack }: MatchModeProps) {
                 type="button"
                 disabled={isSolved}
                 onClick={() => handleTileClick(tile)}
-                className={`flex min-h-0 items-center justify-center overflow-hidden break-words rounded-2xl border px-2 py-1 text-center text-[13.5px] font-semibold leading-tight min-[400px]:text-base min-[400px]:leading-snug transition-all duration-300 select-none ${
+                className={`flex min-h-0 items-center justify-center overflow-hidden break-words rounded-2xl border px-2 py-1 text-center font-semibold leading-tight transition-all duration-300 select-none ${tileTextClass(tile.text)} ${
                   isSolved
                     ? 'pointer-events-none border-transparent opacity-0'
                     : isSelected

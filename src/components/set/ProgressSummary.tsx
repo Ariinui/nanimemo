@@ -17,7 +17,7 @@ function Ring({ value, total, color, track }: { value: number; total: number; co
   const circumference = 2 * Math.PI * r;
   const fraction = total > 0 ? Math.min(1, value / total) : 0;
   return (
-    <span className="relative flex h-14 w-14 shrink-0 items-center justify-center" aria-hidden="true">
+    <span className="relative flex h-12 w-12 shrink-0 items-center justify-center" aria-hidden="true">
       <svg viewBox="0 0 56 56" className="absolute inset-0 -rotate-90">
         <circle cx="28" cy="28" r={r} fill="none" stroke={track} strokeWidth="5" />
         <circle
@@ -31,7 +31,7 @@ function Ring({ value, total, color, track }: { value: number; total: number; co
           strokeDasharray={`${fraction * circumference} ${circumference}`}
         />
       </svg>
-      <span className="text-lg font-bold tabular-nums">{value}</span>
+      <span className="text-base font-bold tabular-nums">{value}</span>
     </span>
   );
 }

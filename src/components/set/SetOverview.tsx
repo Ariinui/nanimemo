@@ -222,7 +222,7 @@ export default function SetOverview({
         <>
           {hasCards && <PreviewCarousel cards={cards} onOpenCards={() => onOpenMode('cards')} />}
 
-          <h1 className="mt-6 break-words text-3xl font-black leading-tight tracking-tight">{set.title}</h1>
+          <h1 className="mt-6 break-words text-2xl font-black leading-tight tracking-tight">{set.title}</h1>
           <p className="mt-2 flex items-center gap-2.5 text-base text-muted-foreground">
             <span className="bg-brand-gradient flex h-7 w-7 items-center justify-center rounded-full">
               <BrainCircuit className="h-4 w-4 text-white" />
@@ -239,8 +239,8 @@ export default function SetOverview({
                 disabled={mode !== 'lesson' && !hasCards}
                 className="flex min-h-[3.75rem] w-full items-center gap-4 rounded-2xl border bg-card px-4 text-left transition-all hover:border-primary/40 active:scale-[0.99] disabled:opacity-40"
               >
-                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white/5">
-                  <Icon className={`h-5 w-5 ${color}`} />
+                <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-white/5">
+                  <Icon className={`h-7 w-7 ${color}`} />
                 </span>
                 <span className="text-lg font-semibold">{label}</span>
               </button>

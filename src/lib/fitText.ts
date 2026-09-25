@@ -8,3 +8,12 @@ export function fitTextClass(text: string): string {
   if (len > 20) return 'text-3xl';
   return 'text-4xl';
 }
+
+// Version réduite pour l'aperçu du set (carte plus petite, souvent avec une image à côté).
+export function fitPreviewClass(text: string): string {
+  const len = text.length;
+  if (len > 80) return 'text-base';
+  if (len > 45) return 'text-lg';
+  if (len > 20) return 'text-xl';
+  return 'text-2xl';
+}

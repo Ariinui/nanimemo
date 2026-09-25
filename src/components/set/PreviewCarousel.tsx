@@ -1,7 +1,7 @@
 import { useRef, useState } from 'react';
 import { Maximize2 } from 'lucide-react';
 import CardImage from '@/components/study/CardImage';
-import { fitTextClass } from '@/lib/fitText';
+import { fitPreviewClass } from '@/lib/fitText';
 import type { VocabCard } from '@/types/vocab';
 
 interface PreviewCarouselProps {
@@ -55,7 +55,7 @@ export default function PreviewCarousel({ cards, onOpenCards }: PreviewCarouselP
                 aria-label={`Carte ${i + 1} sur ${cards.length} : ${isFlipped ? 'définition' : 'terme'}, toucher pour retourner`}
                 className="flex h-full w-full items-center gap-3 rounded-3xl border bg-card px-6 py-5 text-left transition-colors active:bg-secondary"
               >
-                <span className={`min-w-0 flex-1 break-words font-medium leading-snug ${fitTextClass(text)}`}>{text}</span>
+                <span className={`min-w-0 flex-1 break-words font-medium leading-snug ${fitPreviewClass(text)}`}>{text}</span>
                 {!isFlipped && card.image_url && (
                   <CardImage src={card.image_url} className="max-h-28 w-[38%] shrink-0 rounded-md object-cover" />
                 )}

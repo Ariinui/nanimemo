@@ -27,7 +27,7 @@ export default function ModeTabs({ active, onChange, disabledModes = [] }: ModeT
               type="button"
               disabled={disabledModes.includes(mode)}
               onClick={() => onChange(mode)}
-              className={`flex min-h-12 min-w-11 flex-auto flex-col items-center justify-center gap-0.5 rounded-xl px-1 py-1.5 text-[12px] font-semibold tracking-tight transition-all disabled:opacity-40 sm:flex-row sm:gap-1.5 sm:px-3 sm:text-sm ${
+              className={`flex min-h-12 min-w-11 flex-auto flex-col items-center justify-center gap-0.5 rounded-xl px-1 py-1.5 text-[0.75rem] font-semibold tracking-tight transition-all disabled:opacity-40 sm:flex-row sm:gap-1.5 sm:px-3 sm:text-sm ${
                 isActive
                   ? 'bg-brand-gradient text-primary-foreground shadow-md shadow-primary/30'
                   : 'text-muted-foreground hover:bg-white/5 hover:text-foreground'

@@ -17,6 +17,14 @@ interface LearnModeProps {
 
 const MASTERED_BOX: MasteryBox = 5;
 
+// Un choix long est réduit pour tenir sans faire défiler l'écran (le texte reste lisible : ≥ 12 px).
+function choiceTextClass(text: string): string {
+  const len = text.length;
+  if (len > 90) return 'text-[0.8rem] max-[399px]:text-[0.75rem]';
+  if (len > 55) return 'text-[0.95rem] max-[399px]:text-[0.85rem]';
+  return 'text-lg max-[399px]:text-base';
+}
+
 export default function LearnMode({ cards, userId, onBack }: LearnModeProps) {
   const [progressMap, setProgressMap] = useState<Map<string, VocabProgress>>(new Map());
   const [loading, setLoading] = useState(true);
@@ -138,7 +146,7 @@ export default function LearnMode({ cards, userId, onBack }: LearnModeProps) {
 
   const questionText = question.direction === 'term-to-def' ? currentCard.term : currentCard.definition;
   const choiceBase =
-    'flex min-h-12 flex-1 items-center gap-3 rounded-2xl border bg-card px-4 py-2 text-left text-lg font-semibold leading-snug transition-all active:scale-[0.99] disabled:cursor-default';
+    'flex min-h-12 flex-1 items-center gap-3 rounded-2xl border bg-card px-4 py-2 text-left font-semibold leading-snug transition-all active:scale-[0.99] disabled:cursor-default';
 
   return (
     <div className="mx-auto flex w-full max-w-2xl flex-1 flex-col gap-2.5 px-3 pb-3 pt-1">
@@ -175,7 +183,7 @@ export default function LearnMode({ cards, userId, onBack }: LearnModeProps) {
               <button
                 key={i}
                 type="button"
-                className={`${choiceBase} ${
+                className={`${choiceBase} ${choiceTextClass(choice)} ${
                   showState && isCorrectChoice
                     ? 'border-success bg-success/10'
                     : showState && isSelected

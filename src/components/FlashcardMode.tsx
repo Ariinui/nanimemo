@@ -222,15 +222,16 @@ export default function FlashcardMode({ cards, userId, onBack }: FlashcardModePr
       </div>
 
       <div className="flex shrink-0 items-center justify-center gap-4 [@media(max-height:720px)]:hidden">
-        <Button variant="outline" size="icon" className="rounded-full" onClick={() => goTo(index - 1)} disabled={index === 0}>
+        <Button variant="outline" size="icon" className="h-11 w-11 rounded-full" onClick={() => goTo(index - 1)} disabled={index === 0} aria-label="Carte précédente">
           <ArrowLeft className="h-4 w-4" />
         </Button>
         <Button
           variant="outline"
           size="icon"
-          className="rounded-full"
+          className="h-11 w-11 rounded-full"
           onClick={() => goTo(index + 1)}
           disabled={index === order.length - 1}
+          aria-label="Carte suivante"
         >
           <ArrowRight className="h-4 w-4" />
         </Button>

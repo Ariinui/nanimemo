@@ -39,11 +39,19 @@
     @apply border-border;
   }
   html {
-    font-size: 112.5%;
+    /* Échelle proportionnelle à la largeur de l'écran (comme une appli native) : le rendu
+       reste le même quel que soit le zoom ou la densité du téléphone. 4.2vw ≈ 22 px sur un
+       écran de 518 px CSS, 16 px minimum (le plus petit texte 0.75rem reste à 12 px). */
+    font-size: clamp(16px, 4.2vw, 24px);
     -webkit-text-size-adjust: 100%;
     text-size-adjust: 100%;
     height: 100%;
     height: 100dvh;
+  }
+  @media (min-width: 768px) {
+    html {
+      font-size: 18px;
+    }
   }
   body {
     @apply bg-background text-foreground;
