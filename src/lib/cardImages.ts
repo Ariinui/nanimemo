@@ -2,7 +2,7 @@
 // « card-images »). Une image n'est jamais servie depuis un site tiers : elle est
 // téléchargée, retaillée (800 px max, JPEG), envoyée, puis l'URL publique est enregistrée.
 import { getSupabaseClient } from '@/lib/supabase';
-import { updateCardImage } from '@/lib/vocabApi';
+import { deleteCard, deleteSet, updateCardImage } from '@/lib/vocabApi';
 
 export const IMAGE_BUCKET = 'card-images';
 const MAX_SIDE = 800;
@@ -141,4 +141,29 @@ export async function removeCardImage(card: { id: string; image_url: string | nu
  */
 export function cardsNeedingImage<T extends { image_url: string | null }>(cards: T[]): T[] {
   return cards.filter((c) => !isOwnImage(c.image_url));
+}
+
+/** Supprime du stockage les fichiers désignés (ceux qui ne sont pas les nôtres sont ignorés). Sans erreur bloquante. */
+async function removeOwnFiles(urls: (string | null | undefined)[]): Promise<void> {
+  const paths = urls.map((u) => (u ? storagePathFromUrl(u) : null)).filter((p): p is string => Boolean(p));
+  if (paths.length === 0) return;
+  const { error } = await getSupabaseClient().storage.from(IMAGE_BUCKET).remove(paths);
+  if (error) console.warn('Fichiers image non supprimés (orphelins possibles) :', error.message);
+}
+
+/** Supprime une carte puis son fichier image : plus de fichier orphelin dans le stockage. */
+export async function deleteCardWithImage(card: { id: string; image_url: string | null }): Promise<void> {
+  await deleteCard(card.id);
+  await removeOwnFiles([card.image_url]);
+}
+
+/**
+ * Supprime un set puis les fichiers image de toutes ses cartes. La liste est relue en base au
+ * moment de la suppression (elle est donc juste même si l'écran n'est plus à jour).
+ */
+export async function deleteSetWithImages(setId: string): Promise<void> {
+  const { data, error } = await getSupabaseClient().from('vocab_cards').select('image_url').eq('set_id', setId).not('image_url', 'is', null);
+  if (error) throw error;
+  await deleteSet(setId);
+  await removeOwnFiles((data ?? []).map((c: { image_url: string | null }) => c.image_url));
 }

@@ -105,3 +105,10 @@ jobs:
               print(f"::error::Image absente pour la carte « {term} » : {r}")
           sys.exit(1 if broken else 0)
           PY
+
+      - uses: actions/checkout@v4
+      - name: Fichiers image orphelins (avertissement seulement)
+        env:
+          SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          SUPABASE_KEY: ${{ secrets.VITE_SUPABASE_PUBLISHABLE_KEY }}
+        run: node scripts/orphans.mjs
