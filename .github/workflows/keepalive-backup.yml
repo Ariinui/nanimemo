@@ -39,22 +39,14 @@ jobs:
   backup:
     runs-on: ubuntu-latest
     steps:
-      - name: Export des tables
+      - uses: actions/checkout@v4
+      - name: Sauvegarde des tables et des images
         env:
-          URL: ${{ secrets.VITE_SUPABASE_URL }}
-          KEY: ${{ secrets.VITE_SUPABASE_PUBLISHABLE_KEY }}
-        run: |
-          set -euo pipefail
-          mkdir backup
-          for t in vocab_sets vocab_cards vocab_progress; do
-            curl -sS --fail --retry 3 --retry-delay 5 -m 60 \
-              "$URL/rest/v1/$t?select=*&limit=100000" \
-              -H "apikey: $KEY" -H "Authorization: Bearer $KEY" \
-              -o "backup/$t.json"
-            echo "$t : $(python3 -c "import json,sys;print(len(json.load(open('backup/$t.json'))))") lignes"
-          done
-          # Garde-fou : une base vide = alerte (données perdues ou clé invalide)
-          python3 -c "import json,sys;sys.exit(0 if len(json.load(open('backup/vocab_sets.json')))>0 else 1)"
+          SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          SUPABASE_KEY: ${{ secrets.VITE_SUPABASE_PUBLISHABLE_KEY }}
+        # Garde-fous dans le script : base vide ou image introuvable = échec (e-mail).
+        # Restauration : node scripts/restore.mjs <dossier de l'artefact décompressé>
+        run: node scripts/backup.mjs backup
       - uses: actions/upload-artifact@v4
         with:
           name: nanimemo-backup-${{ github.run_number }}
