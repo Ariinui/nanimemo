@@ -9,7 +9,10 @@ import TestMode from '@/components/TestMode';
 import MatchMode from '@/components/MatchMode';
 import LessonMode from '@/components/LessonMode';
 import ModeTabs from '@/components/study/ModeTabs';
-import { deleteCard, deleteSet, fetchCards, insertCards, updateCardImage } from '@/lib/vocabApi';
+import { deleteCard, deleteSet, fetchCards, insertCards } from '@/lib/vocabApi';
+import { cardsNeedingImage, removeCardImage } from '@/lib/cardImages';
+import CardImage from '@/components/study/CardImage';
+import ImageWizard from '@/components/ImageWizard';
 import type { VocabCard, VocabSet, StudyMode } from '@/types/vocab';
 
 const MODE_BUTTONS: {
@@ -25,13 +28,6 @@ const MODE_BUTTONS: {
   { mode: 'lesson', label: 'Leçon', icon: BookOpen, colorClass: 'text-rose-400' },
 ];
 
-interface PixabayImage {
-  id: number;
-  previewUrl: string;
-  fullUrl: string;
-  tags: string;
-}
-
 interface SetEditorProps {
   set: VocabSet;
   userId: string;
@@ -45,10 +41,7 @@ export default function SetEditor({ set, userId, onBack }: SetEditorProps) {
   const [importOpen, setImportOpen] = useState(false);
   const [showTerms, setShowTerms] = useState(false);
   const [mode, setMode] = useState<StudyMode | null>(null);
-  const [imageSearchCardId, setImageSearchCardId] = useState<string | null>(null);
-  const [imageResults, setImageResults] = useState<PixabayImage[]>([]);
-  const [imageLoading, setImageLoading] = useState(false);
-  const [imageError, setImageError] = useState('');
+  const [wizardCards, setWizardCards] = useState<VocabCard[] | null>(null);
 
   const loadCards = async () => {
     setLoading(true);
@@ -88,55 +81,18 @@ export default function SetEditor({ set, userId, onBack }: SetEditorProps) {
     }
   };
 
-  const openImageSearch = async (card: VocabCard) => {
-    setImageSearchCardId(card.id);
-    setImageResults([]);
-    setImageError('');
-    setImageLoading(true);
-    try {
-      const apiKey = import.meta.env.VITE_PIXABAY_API_KEY as string | undefined;
-      if (!apiKey) {
-        setImageError('Pixabay non configuré (VITE_PIXABAY_API_KEY manquante).');
-        return;
-      }
-      const url = `https://pixabay.com/api/?key=${apiKey}&q=${encodeURIComponent(card.term)}&image_type=photo&safesearch=true&per_page=12`;
-      const res = await fetch(url);
-      if (!res.ok) {
-        setImageError('Erreur Pixabay.');
-        return;
-      }
-      const data = (await res.json()) as { hits?: { id: number; previewURL: string; webformatURL: string; tags: string }[] };
-      setImageResults(
-        (data.hits ?? []).map((hit) => ({
-          id: hit.id,
-          previewUrl: hit.previewURL,
-          fullUrl: hit.webformatURL,
-          tags: hit.tags,
-        })),
-      );
-    } catch {
-      setImageError('Impossible de contacter Pixabay.');
-    } finally {
-      setImageLoading(false);
-    }
+  const needingImage = cardsNeedingImage(cards);
+
+  const handleImageSaved = (cardId: string, url: string) => {
+    setCards((prev) => prev.map((c) => (c.id === cardId ? { ...c, image_url: url } : c)));
   };
 
-  const chooseImage = async (cardId: string, url: string) => {
+  const removeImage = async (card: VocabCard) => {
     try {
-      await updateCardImage(cardId, url);
-      setCards((prev) => prev.map((c) => (c.id === cardId ? { ...c, image_url: url } : c)));
-      setImageSearchCardId(null);
+      await removeCardImage(card);
+      setCards((prev) => prev.map((c) => (c.id === card.id ? { ...c, image_url: null } : c)));
     } catch {
-      toast.error("L'enregistrement de l'image a échoué.");
-    }
-  };
-
-  const removeImage = async (cardId: string) => {
-    try {
-      await updateCardImage(cardId, null);
-      setCards((prev) => prev.map((c) => (c.id === cardId ? { ...c, image_url: null } : c)));
-    } catch {
-      toast.error('Impossible de retirer l\'image.');
+      toast.error("Impossible de retirer l'image.");
     }
   };
 
@@ -202,6 +158,22 @@ export default function SetEditor({ set, userId, onBack }: SetEditorProps) {
         ))}
       </div>
 
+      {!loading && needingImage.length > 0 && (
+        <button
+          type="button"
+          onClick={() => setWizardCards(needingImage)}
+          className="mb-6 flex min-h-14 w-full items-center gap-3 rounded-2xl border border-primary/30 bg-primary/10 px-4 py-3 text-left transition-all hover:-translate-y-0.5 hover:border-primary/60"
+        >
+          <ImagePlus className="h-5 w-5 shrink-0 text-primary" />
+          <span className="flex-1">
+            <span className="block font-semibold">Ajouter les images</span>
+            <span className="block text-sm text-muted-foreground">
+              {needingImage.length} carte{needingImage.length !== 1 ? 's' : ''} sans image, une par une
+            </span>
+          </span>
+        </button>
+      )}
+
       <button
         type="button"
         onClick={() => setShowTerms((v) => !v)}
@@ -234,24 +206,25 @@ export default function SetEditor({ set, userId, onBack }: SetEditorProps) {
         <div className="space-y-2">
           {cards.map((card) => (
             <div key={card.id} className="flex items-center gap-3 rounded-lg border p-3">
-              {card.image_url ? (
-                <img src={card.image_url} alt="" className="h-12 w-12 rounded object-cover" />
-              ) : (
-                <button
-                  type="button"
-                  onClick={() => openImageSearch(card)}
-                  className="flex h-12 w-12 items-center justify-center rounded border border-dashed text-muted-foreground hover:bg-accent"
-                  title="Chercher une image"
-                >
-                  <ImagePlus className="h-4 w-4" />
-                </button>
-              )}
+              <button
+                type="button"
+                onClick={() => setWizardCards([card])}
+                className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-dashed text-muted-foreground hover:bg-accent"
+                title={card.image_url ? "Changer l'image" : 'Chercher une image'}
+                aria-label={card.image_url ? "Changer l'image" : 'Chercher une image'}
+              >
+                <CardImage
+                  src={card.image_url}
+                  className="h-full w-full object-cover"
+                  fallback={<ImagePlus className="h-4 w-4" />}
+                />
+              </button>
               <div className="flex-1">
                 <p className="font-medium">{card.term}</p>
                 <p className="text-sm text-muted-foreground">{card.definition}</p>
               </div>
               {card.image_url && (
-                <Button variant="ghost" className="h-11 px-3" onClick={() => removeImage(card.id)}>
+                <Button variant="ghost" className="h-11 px-3" onClick={() => removeImage(card)}>
                   Retirer l'image
                 </Button>
               )}
@@ -267,36 +240,8 @@ export default function SetEditor({ set, userId, onBack }: SetEditorProps) {
 
       <ImportDialog open={importOpen} onOpenChange={setImportOpen} onImport={handleImport} />
 
-      {imageSearchCardId && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={() => setImageSearchCardId(null)}>
-          <div className="max-h-[80vh] w-full max-w-lg overflow-y-auto rounded-xl bg-background p-4" onClick={(e) => e.stopPropagation()}>
-            <h3 className="mb-3 font-semibold">Choisir une image</h3>
-            {imageLoading && (
-              <div className="flex justify-center py-8">
-                <LoaderCircle className="h-5 w-5 animate-spin text-muted-foreground" />
-              </div>
-            )}
-            {imageError && <p className="text-sm text-destructive">{imageError}</p>}
-            {!imageLoading && !imageError && imageResults.length === 0 && (
-              <p className="text-sm text-muted-foreground">Aucun résultat.</p>
-            )}
-            <div className="grid grid-cols-3 gap-2">
-              {imageResults.map((img) => (
-                <button
-                  key={img.id}
-                  type="button"
-                  onClick={() => chooseImage(imageSearchCardId, img.fullUrl)}
-                  className="overflow-hidden rounded-lg border hover:ring-2 hover:ring-primary"
-                >
-                  <img src={img.previewUrl} alt={img.tags} className="h-24 w-full object-cover" />
-                </button>
-              ))}
-            </div>
-            <Button variant="outline" className="mt-3 w-full" onClick={() => setImageSearchCardId(null)}>
-              Fermer
-            </Button>
-          </div>
-        </div>
+      {wizardCards && (
+        <ImageWizard cards={wizardCards} onSaved={handleImageSaved} onClose={() => setWizardCards(null)} />
       )}
     </div>
   );

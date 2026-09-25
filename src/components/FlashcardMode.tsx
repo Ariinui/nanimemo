@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { ArrowLeft, ArrowRight, Shuffle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import CardImage from '@/components/study/CardImage';
 import StatsBar from '@/components/study/StatsBar';
 import StudyTopBar from '@/components/study/StudyTopBar';
 import StudyProgress from '@/components/study/StudyProgress';
@@ -188,9 +189,7 @@ export default function FlashcardMode({ cards, userId, onBack }: FlashcardModePr
             <span className="absolute right-4 top-4 rounded-full border bg-secondary px-2.5 py-1 text-xs text-muted-foreground">
               ↻ Toucher pour retourner
             </span>
-            {current.image_url && (
-              <img src={current.image_url} alt="" className="max-h-40 rounded-lg object-contain" />
-            )}
+            <CardImage src={current.image_url} className="max-h-40 rounded-lg object-contain" />
             <p className={`${fitTextClass(current.term)} max-w-full break-words font-bold leading-snug`}>{current.term}</p>
             <span className="absolute bottom-4 rounded-full border bg-secondary px-3 py-1 text-xs font-medium text-muted-foreground">
               Terme

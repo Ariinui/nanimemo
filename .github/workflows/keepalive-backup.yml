@@ -2,7 +2,8 @@ name: Keepalive + backup Supabase
 
 # Évite la mise en pause du projet Supabase gratuit (inactivité 7 jours)
 # et sauvegarde les tables vocab_* en artefact privé (pas dans le repo public).
-# Un échec envoie un e-mail GitHub : c'est l'alerte si la base ne répond plus.
+# Un échec envoie un e-mail GitHub : c'est l'alerte si la base, le stockage d'images
+# ou la clé Pixabay ne répondent plus.
 
 on:
   schedule:
@@ -37,3 +38,56 @@ jobs:
           name: nanimemo-backup-${{ github.run_number }}
           path: backup/
           retention-days: 60
+
+  images:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Clé Pixabay et recherche d'images
+        env:
+          PIXABAY: ${{ secrets.VITE_PIXABAY_API_KEY }}
+        run: |
+          set -euo pipefail
+          test -n "$PIXABAY" || { echo "::error::Secret VITE_PIXABAY_API_KEY absent"; exit 1; }
+          curl -sS --fail --retry 3 --retry-delay 5 -m 30             "https://pixabay.com/api/?key=$PIXABAY&q=cat&image_type=photo&per_page=3" -o pixabay.json
+          python3 -c "import json,sys;d=json.load(open('pixabay.json'));n=len(d.get('hits',[]));print('Pixabay :',n,'résultats');sys.exit(0 if n>0 else 1)"
+
+      - name: Stockage d'images (écriture, lecture publique, suppression)
+        env:
+          URL: ${{ secrets.VITE_SUPABASE_URL }}
+          KEY: ${{ secrets.VITE_SUPABASE_PUBLISHABLE_KEY }}
+        run: |
+          set -euo pipefail
+          # JPEG 1x1 valide
+          echo '/9j/4AAQSkZJRgABAQEASABIAAD/2wBDAP//////////////////////////////////////////////////////////////////////////////////////wgALCAABAAEBAREA/8QAFBABAAAAAAAAAAAAAAAAAAAAAP/aAAgBAQABPxA=' | base64 -d > probe.jpg
+          NAME="_healthcheck-${GITHUB_RUN_ID}.jpg"
+          curl -sS --fail -m 30 -X POST "$URL/storage/v1/object/card-images/$NAME"             -H "apikey: $KEY" -H "Authorization: Bearer $KEY" -H "Content-Type: image/jpeg" --data-binary @probe.jpg > /dev/null
+          code=$(curl -s -o /dev/null -w "%{http_code}" -m 30 "$URL/storage/v1/object/public/card-images/$NAME")
+          curl -sS -m 30 -X DELETE "$URL/storage/v1/object/card-images/$NAME"             -H "apikey: $KEY" -H "Authorization: Bearer $KEY" > /dev/null || true
+          echo "Lecture publique : $code"
+          test "$code" = "200"
+
+      - name: Toutes les images de cartes s'affichent
+        env:
+          URL: ${{ secrets.VITE_SUPABASE_URL }}
+          KEY: ${{ secrets.VITE_SUPABASE_PUBLISHABLE_KEY }}
+        run: |
+          set -euo pipefail
+          curl -sS --fail --retry 3 --retry-delay 5 -m 60             "$URL/rest/v1/vocab_cards?select=term,image_url&image_url=not.is.null&limit=10000"             -H "apikey: $KEY" -H "Authorization: Bearer $KEY" -o cards.json
+          python3 - <<'PY'
+          import json, subprocess, sys
+          cards = json.load(open('cards.json'))
+          own = [c for c in cards if '/storage/v1/object/public/card-images/' in c['image_url']]
+          external = [c for c in cards if c not in own]
+          broken = []
+          for c in own:
+              r = subprocess.run(['curl', '-s', '-o', '/dev/null', '-m', '30', '-w', '%{http_code} %{content_type}', c['image_url']],
+                                 capture_output=True, text=True).stdout.strip()
+              if not r.startswith('200 image/'):
+                  broken.append((c['term'], r))
+          print(f"{len(cards)} cartes avec image : {len(own)} sur notre stockage, {len(external)} externes (à refaire dans l'app)")
+          if external:
+              print(f"::warning::{len(external)} carte(s) ont encore une image externe (lien temporaire) : ouvre le set > Ajouter les images")
+          for term, r in broken:
+              print(f"::error::Image absente pour la carte « {term} » : {r}")
+          sys.exit(1 if broken else 0)
+          PY
