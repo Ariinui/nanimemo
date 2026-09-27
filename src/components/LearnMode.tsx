@@ -15,7 +15,8 @@ interface LearnModeProps {
   onBack: () => void;
 }
 
-const MASTERED_BOX: MasteryBox = 5;
+// Bonnes réponses à donner par carte pour la terminer dans la session (une carte ratée revient jusqu’à être réussie).
+const SESSION_GOAL = 1;
 
 // Un choix long est réduit pour tenir sans faire défiler l'écran (le texte reste lisible : ≥ 12 px).
 function choiceTextClass(text: string): string {
@@ -35,6 +36,7 @@ export default function LearnMode({ cards, userId, onBack }: LearnModeProps) {
   const [selectedChoice, setSelectedChoice] = useState<number | null>(null);
   const [stats, setStats] = useState({ correct: 0, wrong: 0 });
   const [streak, setStreak] = useState(0);
+  const [sessionCorrect, setSessionCorrect] = useState<Map<string, number>>(new Map());
 
   useEffect(() => {
     let cancelled = false;
@@ -59,18 +61,19 @@ export default function LearnMode({ cards, userId, onBack }: LearnModeProps) {
   }, [queue]);
 
   const totalCards = cards.length;
-  // Jauge = avancement réel dans les boîtes (boîte 1 → 0 %, boîte 5 → 100 %) : elle monte à chaque bonne réponse.
-  // Compteur = cartes acquises (au moins une bonne réponse depuis la dernière erreur).
-  const { progressPct, learnedCount } = useMemo(() => {
-    let sum = 0;
-    let learned = 0;
+  // Progression de LA SESSION (indépendante de l'historique) : chaque carte doit être réussie
+  // SESSION_GOAL fois de suite. Jauge = bonnes réponses validées / total à valider ; compteur = cartes terminées.
+  const { progressPct, doneCount } = useMemo(() => {
+    let steps = 0;
+    let done = 0;
     for (const c of cards) {
-      const box = progressMap.get(c.id)?.box ?? 1;
-      sum += (box - 1) / (MASTERED_BOX - 1);
-      if (box >= 2) learned += 1;
+      const n = Math.min(sessionCorrect.get(c.id) ?? 0, SESSION_GOAL);
+      steps += n;
+      if (n >= SESSION_GOAL) done += 1;
     }
-    return { progressPct: totalCards === 0 ? 0 : (sum / totalCards) * 100, learnedCount: learned };
-  }, [cards, progressMap, totalCards]);
+    const goal = totalCards * SESSION_GOAL;
+    return { progressPct: goal === 0 ? 0 : (steps / goal) * 100, doneCount: done };
+  }, [cards, sessionCorrect, totalCards]);
 
   if (loading) {
     return (
@@ -98,6 +101,8 @@ export default function LearnMode({ cards, userId, onBack }: LearnModeProps) {
   const commitAnswer = async (correct: boolean) => {
     setStats((s) => (correct ? { ...s, correct: s.correct + 1 } : { ...s, wrong: s.wrong + 1 }));
     setStreak((n) => (correct ? n + 1 : 0));
+    const nextSession = correct ? (sessionCorrect.get(currentCard.id) ?? 0) + 1 : 0;
+    setSessionCorrect((m) => new Map(m).set(currentCard.id, nextSession));
 
     const prev = progressMap.get(currentCard.id);
     const nextBox: MasteryBox = correct
@@ -120,7 +125,7 @@ export default function LearnMode({ cards, userId, onBack }: LearnModeProps) {
     setTimeout(() => {
       setQueue((q) => {
         const [, ...rest] = q;
-        if (correct && nextBox >= MASTERED_BOX) return rest;
+        if (correct && nextSession >= SESSION_GOAL) return rest;
         if (correct) return rest.length === 0 ? [currentCard] : [...rest, currentCard];
         // wrong answer: réinsérer un peu plus loin pour la revoir bientôt
         const reinsertAt = Math.min(rest.length, 2);
@@ -161,7 +166,7 @@ export default function LearnMode({ cards, userId, onBack }: LearnModeProps) {
         onBack={onBack}
         right={
           <span className="w-16 shrink-0 text-right text-sm font-medium tabular-nums text-muted-foreground">
-            {learnedCount} / {totalCards}
+            {doneCount} / {totalCards}
           </span>
         }
       >
