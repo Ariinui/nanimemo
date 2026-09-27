@@ -58,12 +58,19 @@ export default function LearnMode({ cards, userId, onBack }: LearnModeProps) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [queue]);
 
-  const remaining = queue.length;
   const totalCards = cards.length;
-  const progressPct = useMemo(() => {
-    const masteredNow = totalCards - remaining;
-    return totalCards === 0 ? 0 : (masteredNow / totalCards) * 100;
-  }, [remaining, totalCards]);
+  // Jauge = avancement réel dans les boîtes (boîte 1 → 0 %, boîte 5 → 100 %) : elle monte à chaque bonne réponse.
+  // Compteur = cartes acquises (au moins une bonne réponse depuis la dernière erreur).
+  const { progressPct, learnedCount } = useMemo(() => {
+    let sum = 0;
+    let learned = 0;
+    for (const c of cards) {
+      const box = progressMap.get(c.id)?.box ?? 1;
+      sum += (box - 1) / (MASTERED_BOX - 1);
+      if (box >= 2) learned += 1;
+    }
+    return { progressPct: totalCards === 0 ? 0 : (sum / totalCards) * 100, learnedCount: learned };
+  }, [cards, progressMap, totalCards]);
 
   if (loading) {
     return (
@@ -154,7 +161,7 @@ export default function LearnMode({ cards, userId, onBack }: LearnModeProps) {
         onBack={onBack}
         right={
           <span className="w-16 shrink-0 text-right text-sm font-medium tabular-nums text-muted-foreground">
-            {totalCards - remaining} / {totalCards}
+            {learnedCount} / {totalCards}
           </span>
         }
       >
