@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import StudyTopBar from '@/components/study/StudyTopBar';
 import { shuffle } from '@/lib/quiz';
 import { matchBestKey } from '@/lib/setProgress';
+import { playCorrectSound, playWrongSound } from '@/lib/sound';
 import type { VocabCard } from '@/types/vocab';
 
 interface MatchModeProps {
@@ -96,6 +97,7 @@ export default function MatchMode({ cards, onBack }: MatchModeProps) {
 
     const first = tiles.find((t) => t.key === selected)!;
     if (first.cardId === tile.cardId) {
+      playCorrectSound();
       const nextSolved = new Set(solved);
       nextSolved.add(first.key);
       nextSolved.add(tile.key);
@@ -116,6 +118,7 @@ export default function MatchMode({ cards, onBack }: MatchModeProps) {
         }
       }
     } else {
+      playWrongSound();
       setShaking(new Set([first.key, tile.key]));
       setTimeout(() => setShaking(new Set()), 400);
       setSelected(null);

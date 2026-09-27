@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import StatsBar from '@/components/study/StatsBar';
 import { generateTestSession, isAnswerCorrect } from '@/lib/quiz';
+import { playCorrectSound, playWrongSound } from '@/lib/sound';
 import type { VocabCard, Question, QuestionType } from '@/types/vocab';
 
 interface TestModeProps {
@@ -101,6 +102,7 @@ export default function TestMode({ cards, onBack }: TestModeProps) {
     const question = session[index];
     const correct = isAnswerCorrect(question, raw);
     setAnswers((prev) => ({ ...prev, [index]: { correct, given: String(raw) } }));
+    if (correct) playCorrectSound(); else playWrongSound();
   };
 
   if (step === 'config') {

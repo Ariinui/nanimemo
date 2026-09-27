@@ -7,6 +7,7 @@ import { fitTextClass } from '@/lib/fitText';
 import { Input } from '@/components/ui/input';
 import { generateQuestion, isAnswerCorrect, shuffle } from '@/lib/quiz';
 import { fetchProgress, upsertProgress } from '@/lib/vocabApi';
+import { playCorrectSound, playWrongSound } from '@/lib/sound';
 import type { VocabCard, VocabProgress, MasteryBox, Question } from '@/types/vocab';
 
 interface LearnModeProps {
@@ -121,6 +122,7 @@ export default function LearnMode({ cards, userId, onBack }: LearnModeProps) {
     });
 
     setFeedback(correct ? 'correct' : 'wrong');
+    if (correct) playCorrectSound(); else playWrongSound();
 
     setTimeout(() => {
       setQueue((q) => {
