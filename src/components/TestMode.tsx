@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input';
 import StatsBar from '@/components/study/StatsBar';
 import { generateTestSession, isAnswerCorrect } from '@/lib/quiz';
 import { playCorrectSound, playWrongSound } from '@/lib/sound';
+import AudioButton from '@/components/study/AudioButton';
 import type { VocabCard, Question, QuestionType } from '@/types/vocab';
 
 interface TestModeProps {
@@ -277,9 +278,14 @@ export default function TestMode({ cards, onBack }: TestModeProps) {
                 </span>
                 <span className="text-xs text-muted-foreground">{i + 1} sur {session.length}</span>
               </div>
-              <p className="mb-4 text-xl font-bold leading-snug">
-                {question.direction === 'term-to-def' ? question.card.term : question.card.definition}
-              </p>
+              <div className="mb-4 flex items-start gap-2">
+                <p className="min-w-0 flex-1 break-words text-xl font-bold leading-snug">
+                  {question.direction === 'term-to-def' ? question.card.term : question.card.definition}
+                </p>
+                {question.direction === 'term-to-def' && question.card.audio_url && (
+                  <AudioButton url={question.card.audio_url} label={question.card.term} className="-mt-1.5" />
+                )}
+              </div>
 
               {question.type === 'qcm' && (
                 <div className="grid gap-2.5 sm:grid-cols-2">

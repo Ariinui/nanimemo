@@ -1,8 +1,12 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Check, X, LoaderCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import AudioButton from '@/components/study/AudioButton';
+import AutoplayToggle from '@/components/study/AutoplayToggle';
 import StatsBar from '@/components/study/StatsBar';
 import StudyTopBar from '@/components/study/StudyTopBar';
+import { playCardAudio } from '@/lib/audio';
+import { useAutoplay } from '@/lib/useAutoplay';
 import { fitTextClass } from '@/lib/fitText';
 import { Input } from '@/components/ui/input';
 import { generateQuestion, isAnswerCorrect, shuffle } from '@/lib/quiz';
@@ -60,6 +64,17 @@ export default function LearnMode({ cards, userId, onBack }: LearnModeProps) {
     setSelectedChoice(null);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [queue]);
+
+  const hasAudio = cards.some((c) => c.audio_url);
+  const [autoplay, toggleAutoplay] = useAutoplay();
+
+  // Lecture automatique : quand le terme est la question, on le prononce à son apparition
+  // (jamais quand c'est la réponse à trouver : ça la donnerait).
+  useEffect(() => {
+    if (autoplay && question?.direction === 'term-to-def' && question.card.audio_url) {
+      playCardAudio(question.card.audio_url);
+    }
+  }, [question, autoplay]);
 
   const totalCards = cards.length;
   // Progression de LA SESSION (indépendante de l'historique) : chaque carte doit être réussie
@@ -167,9 +182,12 @@ export default function LearnMode({ cards, userId, onBack }: LearnModeProps) {
       <StudyTopBar
         onBack={onBack}
         right={
-          <span className="w-16 shrink-0 text-right text-sm font-medium tabular-nums text-muted-foreground">
-            {doneCount} / {totalCards}
-          </span>
+          <div className="flex shrink-0 items-center gap-1">
+            {hasAudio && <AutoplayToggle on={autoplay} onToggle={toggleAutoplay} />}
+            <span className="w-16 shrink-0 text-right text-sm font-medium tabular-nums text-muted-foreground">
+              {doneCount} / {totalCards}
+            </span>
+          </div>
         }
       >
         <div className="h-2.5 overflow-hidden rounded-full bg-secondary">
@@ -179,8 +197,11 @@ export default function LearnMode({ cards, userId, onBack }: LearnModeProps) {
 
       <div
         key={currentCard.id + stats.correct + stats.wrong}
-        className={`anim-pop shadow-glow flex min-h-24 ${question.type === 'written' ? 'flex-[5]' : 'flex-[2]'} flex-col items-center justify-center rounded-3xl border bg-card px-5 py-4 text-center`}
+        className={`anim-pop shadow-glow relative flex min-h-24 ${question.type === 'written' ? 'flex-[5]' : 'flex-[2]'} flex-col items-center justify-center rounded-3xl border bg-card px-5 py-4 text-center`}
       >
+        {question.direction === 'term-to-def' && currentCard.audio_url && (
+          <AudioButton url={currentCard.audio_url} label={currentCard.term} className="absolute right-2 top-2" />
+        )}
         <p className="mb-2 text-xs font-semibold uppercase tracking-widest text-muted-foreground">
           {question.direction === 'term-to-def' ? 'Terme' : 'Définition'}
         </p>

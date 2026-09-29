@@ -1,7 +1,7 @@
-import { useEffect, useRef, useState } from 'react';
-import { LoaderCircle, Volume2 } from 'lucide-react';
+import { useEffect, useSyncExternalStore } from 'react';
+import { Volume2 } from 'lucide-react';
 import { toast } from 'sonner';
-import { playCardAudio, stopCardAudio } from '@/lib/audio';
+import { getPlayingUrl, playCardAudio, stopCardAudio, subscribeAudio } from '@/lib/audio';
 
 interface AudioButtonProps {
   url: string;
@@ -10,32 +10,19 @@ interface AudioButtonProps {
   className?: string;
 }
 
-/** Bouton « écouter la prononciation » : icône animée pendant la lecture, message clair en cas d'échec. */
+/** Bouton « écouter la prononciation » : reflète la lecture en cours (même lancée automatiquement), 2e toucher = stop. */
 export default function AudioButton({ url, label, className = '' }: AudioButtonProps) {
-  const [playing, setPlaying] = useState(false);
-  const mounted = useRef(true);
+  const playing = useSyncExternalStore(subscribeAudio, getPlayingUrl) === url;
 
-  useEffect(() => {
-    mounted.current = true;
-    return () => {
-      mounted.current = false;
-      stopCardAudio();
-    };
-  }, []);
+  // Le bouton disparaît (changement de carte, fermeture) : on coupe son audio, jamais celui d'une autre carte.
+  useEffect(() => () => stopCardAudio(url), [url]);
 
   const handleClick = () => {
     if (playing) {
       stopCardAudio();
       return;
     }
-    setPlaying(true);
-    playCardAudio(
-      url,
-      () => {
-        if (mounted.current) setPlaying(false);
-      },
-      () => toast.error("Audio indisponible pour l'instant. Vérifiez votre connexion."),
-    );
+    playCardAudio(url, () => toast.error("Audio indisponible pour l'instant. Vérifiez votre connexion."));
   };
 
   return (
@@ -45,9 +32,9 @@ export default function AudioButton({ url, label, className = '' }: AudioButtonP
       aria-pressed={playing}
       aria-label={`Écouter la prononciation : ${label}`}
       title="Écouter la prononciation"
-      className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-full transition-colors hover:bg-white/10 ${playing ? 'text-primary' : 'text-foreground/90'} ${className}`}
+      className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-full transition-colors hover:bg-white/10 ${playing ? 'bg-primary/15 text-primary' : 'text-foreground/90'} ${className}`}
     >
-      {playing ? <LoaderCircle className="h-5 w-5 animate-pulse" /> : <Volume2 className="h-5 w-5" />}
+      <Volume2 className={`h-5 w-5 ${playing ? 'animate-pulse' : ''}`} />
     </button>
   );
 }

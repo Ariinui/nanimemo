@@ -2,10 +2,13 @@ import { useEffect, useRef, useState } from 'react';
 import { ArrowLeft, ArrowRight, Shuffle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import AudioButton from '@/components/study/AudioButton';
+import AutoplayToggle from '@/components/study/AutoplayToggle';
 import CardImage from '@/components/study/CardImage';
 import StatsBar from '@/components/study/StatsBar';
 import StudyTopBar from '@/components/study/StudyTopBar';
 import StudyProgress from '@/components/study/StudyProgress';
+import { playCardAudio } from '@/lib/audio';
+import { useAutoplay } from '@/lib/useAutoplay';
 import { fitTextClass } from '@/lib/fitText';
 import { shuffle } from '@/lib/quiz';
 import { fetchProgress, upsertProgress } from '@/lib/vocabApi';
@@ -46,6 +49,14 @@ export default function FlashcardMode({ cards, userId, onBack }: FlashcardModePr
   const didSwipe = useRef(false);
 
   const current = order[index];
+  const hasAudio = cards.some((c) => c.audio_url);
+  const [autoplay, toggleAutoplay] = useAutoplay();
+
+  // Lecture automatique : à chaque nouvelle carte (et à l'activation du réglage), on prononce le terme.
+  const currentAudio = current?.audio_url;
+  useEffect(() => {
+    if (autoplay && currentAudio) playCardAudio(currentAudio);
+  }, [current?.id, currentAudio, autoplay]);
 
   useEffect(() => {
     let cancelled = false;
@@ -168,9 +179,12 @@ export default function FlashcardMode({ cards, userId, onBack }: FlashcardModePr
       <StudyTopBar
         onBack={onBack}
         right={
-          <Button variant="ghost" size="icon" className="h-11 w-11 shrink-0 rounded-full" onClick={handleShuffle} aria-label="Mélanger" title="Mélanger">
-            <Shuffle className="h-5 w-5" />
-          </Button>
+          <div className="flex shrink-0 items-center">
+            {hasAudio && <AutoplayToggle on={autoplay} onToggle={toggleAutoplay} />}
+            <Button variant="ghost" size="icon" className="h-11 w-11 shrink-0 rounded-full" onClick={handleShuffle} aria-label="Mélanger" title="Mélanger">
+              <Shuffle className="h-5 w-5" />
+            </Button>
+          </div>
         }
       >
         <StudyProgress label={`Carte ${index + 1} / ${order.length}`} current={index + 1} total={order.length} />
