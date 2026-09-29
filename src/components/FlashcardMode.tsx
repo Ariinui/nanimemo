@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { ArrowLeft, ArrowRight, Shuffle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import AudioButton from '@/components/study/AudioButton';
 import CardImage from '@/components/study/CardImage';
 import StatsBar from '@/components/study/StatsBar';
 import StudyTopBar from '@/components/study/StudyTopBar';
@@ -175,7 +176,10 @@ export default function FlashcardMode({ cards, userId, onBack }: FlashcardModePr
         <StudyProgress label={`Carte ${index + 1} / ${order.length}`} current={index + 1} total={order.length} />
       </StudyTopBar>
 
-      <div className="perspective-1000 flex min-h-44 flex-1">
+      <div className="perspective-1000 relative flex min-h-44 flex-1">
+        {current.audio_url && (
+          <AudioButton key={current.id} url={current.audio_url} label={current.term} className="absolute left-3 top-3 z-10" />
+        )}
         <button
           type="button"
           onClick={handleCardClick}

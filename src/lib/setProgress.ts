@@ -71,3 +71,8 @@ export function speak(text: string, lang = 'fr-FR'): void {
   utterance.lang = lang;
   window.speechSynthesis.speak(utterance);
 }
+
+/** Sets en tahitien : la synthèse vocale française y lirait faux, on n'y propose que les vrais enregistrements. */
+export function isTahitianSetTitle(title: string): boolean {
+  return title.startsWith('Embark — ') || title.startsWith('Le Parler Tahitien — Leçon ');
+}

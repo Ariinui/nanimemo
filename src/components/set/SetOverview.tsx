@@ -24,7 +24,7 @@ import ProgressSummary from '@/components/set/ProgressSummary';
 import ReviewPreview from '@/components/set/ReviewPreview';
 import TermCard from '@/components/set/TermCard';
 import { formatCreatedFr } from '@/lib/relativeTime';
-import { cardStatus, countProgress, loadStarred, saveStarred, type CardStatus } from '@/lib/setProgress';
+import { cardStatus, countProgress, isTahitianSetTitle, loadStarred, saveStarred, type CardStatus } from '@/lib/setProgress';
 import type { StudyMode, VocabCard, VocabProgress, VocabSet } from '@/types/vocab';
 
 const MODES: { mode: StudyMode; label: string; icon: typeof Layers; color: string }[] = [
@@ -162,6 +162,7 @@ export default function SetOverview({
       starred={starred.has(card.id)}
       editing={editing}
       definitionHidden={hideDefinitions}
+      speechFallback={!isTahitianSetTitle(set.title)}
       onToggleStar={() => toggleStar(card.id)}
       onChangeImage={() => onChangeImage(card)}
       onRemoveImage={() => onRemoveImage(card)}

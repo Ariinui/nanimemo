@@ -14,6 +14,8 @@ export interface VocabCard {
   term: string;
   definition: string;
   image_url: string | null;
+  /** Prononciation (mp3) — présente surtout sur les cartes Embark. */
+  audio_url?: string | null;
   position: number;
 }
 

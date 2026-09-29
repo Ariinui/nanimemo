@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { ImagePlus, Star, Trash2, Volume2 } from 'lucide-react';
+import AudioButton from '@/components/study/AudioButton';
 import CardImage from '@/components/study/CardImage';
 import { canSpeak, speak } from '@/lib/setProgress';
 import type { VocabCard } from '@/types/vocab';
@@ -10,6 +11,8 @@ interface TermCardProps {
   editing: boolean;
   /** « Cacher les définitions » : la définition reste masquée tant qu'on ne la touche pas. */
   definitionHidden?: boolean;
+  /** Synthèse vocale française quand la carte n'a pas d'enregistrement (faux pour un set en tahitien). */
+  speechFallback?: boolean;
   onToggleStar: () => void;
   onChangeImage: () => void;
   onRemoveImage: () => void;
@@ -19,7 +22,7 @@ interface TermCardProps {
 const iconButton =
   'flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-foreground/90 transition-colors hover:bg-white/10';
 
-export default function TermCard({ card, starred, editing, definitionHidden = false, onToggleStar, onChangeImage, onRemoveImage, onDelete }: TermCardProps) {
+export default function TermCard({ card, starred, editing, definitionHidden = false, speechFallback = true, onToggleStar, onChangeImage, onRemoveImage, onDelete }: TermCardProps) {
   const [revealed, setRevealed] = useState(false);
   const masked = definitionHidden && !revealed && !editing;
 
@@ -38,10 +41,15 @@ export default function TermCard({ card, starred, editing, definitionHidden = fa
           </>
         ) : (
           <>
-            {canSpeak() && (
-              <button type="button" className={iconButton} onClick={() => speak(card.term)} aria-label={`Écouter : ${card.term}`}>
-                <Volume2 className="h-5 w-5" />
-              </button>
+            {card.audio_url ? (
+              <AudioButton url={card.audio_url} label={card.term} />
+            ) : (
+              speechFallback &&
+              canSpeak() && (
+                <button type="button" className={iconButton} onClick={() => speak(card.term)} aria-label={`Écouter : ${card.term}`}>
+                  <Volume2 className="h-5 w-5" />
+                </button>
+              )
             )}
             <button
               type="button"
