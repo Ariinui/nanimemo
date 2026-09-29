@@ -15,22 +15,34 @@ import type { VocabSet } from '@/types/vocab';
 
 const TAHITIEN_LESSON_PREFIX = 'Le Parler Tahitien — Leçon ';
 
+const EMBARK_PREFIX = 'Embark — ';
+const EMBARK_CATEGORY_ORDER = ['Noms', 'Verbes', 'Adjectifs', 'Autres mots', 'Phrases'];
+
+export type FolderId = 'tahitien' | 'embark';
+
 function tahitienLessonNumber(title: string): number {
   return parseInt(title.slice(TAHITIEN_LESSON_PREFIX.length), 10);
+}
+
+function embarkSortKey(title: string): number {
+  const m = /^Embark — (.+) (\d+)$/.exec(title);
+  if (!m) return Number.MAX_SAFE_INTEGER;
+  const cat = EMBARK_CATEGORY_ORDER.indexOf(m[1]);
+  return (cat === -1 ? EMBARK_CATEGORY_ORDER.length : cat) * 1000 + parseInt(m[2], 10);
 }
 
 interface HomeProps {
   userId: string;
   onOpenSet: (set: VocabSet) => void;
-  tahitienFolderOpen: boolean;
-  onTahitienFolderOpenChange: (open: boolean) => void;
+  openFolder: FolderId | null;
+  onOpenFolderChange: (folder: FolderId | null) => void;
 }
 
 export default function Home({
   userId,
   onOpenSet,
-  tahitienFolderOpen,
-  onTahitienFolderOpenChange,
+  openFolder,
+  onOpenFolderChange,
 }: HomeProps) {
   const [sets, setSets] = useState<VocabSet[]>([]);
   const [loading, setLoading] = useState(true);
@@ -74,19 +86,26 @@ export default function Home({
   const tahitienSets = sets
     .filter((s) => s.title.startsWith(TAHITIEN_LESSON_PREFIX))
     .sort((a, b) => tahitienLessonNumber(a.title) - tahitienLessonNumber(b.title));
-  const otherSets = sets.filter((s) => !s.title.startsWith(TAHITIEN_LESSON_PREFIX));
+  const embarkSets = sets
+    .filter((s) => s.title.startsWith(EMBARK_PREFIX))
+    .sort((a, b) => embarkSortKey(a.title) - embarkSortKey(b.title));
+  const otherSets = sets.filter(
+    (s) => !s.title.startsWith(TAHITIEN_LESSON_PREFIX) && !s.title.startsWith(EMBARK_PREFIX),
+  );
 
-  if (tahitienFolderOpen) {
+  if (openFolder) {
+    const folderSets = openFolder === 'embark' ? embarkSets : tahitienSets;
+    const folderTitle = openFolder === 'embark' ? 'Embark' : 'Apprendre le tahitien';
     return (
       <div className="mx-auto w-full max-w-3xl px-3 py-5">
         <div className="mb-6 flex items-center gap-3">
-          <Button variant="ghost" size="icon" onClick={() => onTahitienFolderOpenChange(false)}>
+          <Button variant="ghost" size="icon" onClick={() => onOpenFolderChange(null)}>
             <ArrowLeft className="h-4 w-4" />
           </Button>
-          <h1 className="text-2xl font-bold">Apprendre le tahitien</h1>
+          <h1 className="text-2xl font-bold">{folderTitle}</h1>
         </div>
         <div className="grid gap-3 sm:grid-cols-2">
-          {tahitienSets.map((set) => (
+          {folderSets.map((set) => (
             <button
               key={set.id}
               type="button"
@@ -136,13 +155,26 @@ export default function Home({
           {tahitienSets.length > 0 && (
             <button
               type="button"
-              onClick={() => onTahitienFolderOpenChange(true)}
+              onClick={() => onOpenFolderChange('tahitien')}
               className="flex items-center gap-3 anim-fade-up rounded-2xl border bg-card p-4 text-left shadow-sm transition-all hover:-translate-y-0.5 hover:border-primary/40 hover:bg-card hover:shadow-glow"
             >
               <BookOpen className="h-5 w-5 shrink-0 text-muted-foreground" />
               <div>
                 <p className="font-semibold">Apprendre le tahitien</p>
                 <p className="mt-1 text-sm text-muted-foreground">{tahitienSets.length} leçons</p>
+              </div>
+            </button>
+          )}
+          {embarkSets.length > 0 && (
+            <button
+              type="button"
+              onClick={() => onOpenFolderChange('embark')}
+              className="flex items-center gap-3 anim-fade-up rounded-2xl border bg-card p-4 text-left shadow-sm transition-all hover:-translate-y-0.5 hover:border-primary/40 hover:bg-card hover:shadow-glow"
+            >
+              <BookOpen className="h-5 w-5 shrink-0 text-muted-foreground" />
+              <div>
+                <p className="font-semibold">Embark</p>
+                <p className="mt-1 text-sm text-muted-foreground">{embarkSets.length} sets</p>
               </div>
             </button>
           )}
