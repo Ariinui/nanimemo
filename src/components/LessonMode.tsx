@@ -51,7 +51,7 @@ export default function LessonMode({ set, onBack, onLessonUpdated }: LessonModeP
           }}
         />
       ) : !lesson ? (
-        <div className="rounded-lg border border-dashed p-10 text-center text-sm text-muted-foreground">
+        <div className="rounded-lg border border-dashed p-10 text-center text-base text-muted-foreground">
           <p className="mb-4">Aucune leçon pour ce set.</p>
           <Button className="h-11 px-4" onClick={() => setEditing(true)}>
             <Pencil className="h-4 w-4" />
@@ -60,11 +60,11 @@ export default function LessonMode({ set, onBack, onLessonUpdated }: LessonModeP
         </div>
       ) : (
         <div className="space-y-6 pb-8">
-          <p className="text-sm text-muted-foreground">{lesson.intro}</p>
+          <p className="whitespace-pre-line text-base leading-relaxed text-foreground/90">{lesson.intro}</p>
 
           {lesson.table.headers.length > 0 && (
             <div className="overflow-x-auto rounded-2xl border">
-              <table className="w-full border-collapse text-sm">
+              <table className="w-full border-collapse text-base">
                 <thead>
                   <tr className="bg-muted/50">
                     {lesson.table.headers.map((h, i) => (
@@ -95,7 +95,7 @@ export default function LessonMode({ set, onBack, onLessonUpdated }: LessonModeP
           {lesson.quickRef.length > 0 && (
             <div className="rounded-2xl border bg-card p-5 shadow-sm">
               <h3 className="mb-1 font-bold">Repère rapide</h3>
-              <p className="mb-3 text-sm text-muted-foreground">
+              <p className="mb-3 text-base text-muted-foreground">
                 Touchez un terme pour révéler sa catégorie et vous auto-tester.
               </p>
               <div className="grid gap-1 sm:grid-cols-2">
@@ -104,7 +104,7 @@ export default function LessonMode({ set, onBack, onLessonUpdated }: LessonModeP
                     key={item.term}
                     type="button"
                     onClick={() => toggleRevealed(i)}
-                    className="flex items-center justify-between rounded-lg border px-3 py-2 text-left text-sm transition-colors hover:bg-accent"
+                    className="flex items-center justify-between rounded-lg border px-3 py-2 text-left text-base transition-colors hover:bg-accent"
                   >
                     <span className="font-medium">{item.term}</span>
                     <span className={revealed.has(i) ? 'text-muted-foreground' : 'text-muted-foreground/40'}>
@@ -118,20 +118,20 @@ export default function LessonMode({ set, onBack, onLessonUpdated }: LessonModeP
 
           <div className="rounded-2xl border bg-card p-5 shadow-sm">
             <h3 className="mb-2 font-bold">{lesson.story.title}</h3>
-            <p className="mb-3 text-sm text-muted-foreground">{lesson.story.intro}</p>
-            <p className="rounded-xl border bg-muted/40 p-4 text-sm italic leading-relaxed">"{lesson.story.text}"</p>
-            <p className="mt-3 text-sm text-muted-foreground">{lesson.story.outro}</p>
+            <p className="mb-3 text-base text-muted-foreground">{lesson.story.intro}</p>
+            <p className="rounded-xl border bg-muted/40 p-4 text-base italic leading-relaxed">"{lesson.story.text}"</p>
+            <p className="mt-3 text-base text-muted-foreground">{lesson.story.outro}</p>
           </div>
 
           {lesson.tips.map((tip) => (
             <div key={tip.title} className="rounded-2xl border bg-card p-5 shadow-sm">
               <h3 className="mb-2 font-bold">{tip.title}</h3>
-              <p className="whitespace-pre-line text-sm text-muted-foreground">{tip.body}</p>
+              <p className="whitespace-pre-line text-base leading-relaxed text-foreground/90">{tip.body}</p>
             </div>
           ))}
 
           <div className="rounded-2xl border border-primary/30 bg-primary/5 p-5">
-            <p className="text-sm font-medium">{lesson.warning}</p>
+            <p className="text-base font-medium">{lesson.warning}</p>
           </div>
         </div>
       )}
