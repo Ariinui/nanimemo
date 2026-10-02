@@ -45,6 +45,8 @@ export interface LessonTable {
 export interface LessonTip {
   title: string;
   body: string;
+  /** Schéma affiché au-dessus du texte (réutilise l'URL d'une image de carte du même set). */
+  image?: string;
 }
 
 export interface LessonQuickRefItem {

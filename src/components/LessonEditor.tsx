@@ -61,7 +61,10 @@ export default function LessonEditor({ setId, lesson, onSaved, onCancel }: Lesso
           text: storyText.trim(),
           outro: storyOutro.trim(),
         },
-        tips: parseTips(tipsRaw),
+        tips: parseTips(tipsRaw).map((t) => {
+          const image = base.tips.find((o) => o.title === t.title)?.image;
+          return image ? { ...t, image } : t;
+        }),
         warning: warning.trim(),
       };
       await updateSetLesson(setId, newLesson);

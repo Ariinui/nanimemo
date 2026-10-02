@@ -126,6 +126,7 @@ export default function LessonMode({ set, onBack, onLessonUpdated }: LessonModeP
           {lesson.tips.map((tip) => (
             <div key={tip.title} className="rounded-2xl border bg-card p-5 shadow-sm">
               <h3 className="mb-2 font-bold">{tip.title}</h3>
+              {tip.image && <img src={tip.image} alt={tip.title} loading="lazy" className="mb-3 w-full rounded-xl border bg-white" />}
               <p className="whitespace-pre-line text-base leading-relaxed text-foreground/90">{tip.body}</p>
             </div>
           ))}
