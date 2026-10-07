@@ -186,7 +186,7 @@ export default function Home({
               onClick={() => onOpenSet(set)}
               className={`anim-fade-up rounded-2xl border bg-card p-4 text-left shadow-sm transition-all hover:-translate-y-0.5 hover:border-primary/40 hover:bg-card hover:shadow-glow${set.title.startsWith(COURS_PREFIX) ? ' flex items-center gap-3' : ''}`}
             >
-              {set.title.startsWith(COURS_PREFIX) && <BookOpen className="h-5 w-5 shrink-0 text-muted-foreground" />}
+              {set.title.startsWith(COURS_PREFIX) && <BookOpen className="h-5 w-5 shrink-0 text-blue-500" />}
               <div>
                 <p className="font-semibold">{set.title}</p>
                 {set.description && <p className="mt-1 text-sm text-muted-foreground">{set.description}</p>}
