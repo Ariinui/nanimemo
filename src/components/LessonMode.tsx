@@ -116,12 +116,14 @@ export default function LessonMode({ set, onBack, onLessonUpdated }: LessonModeP
             </div>
           )}
 
-          <div className="rounded-2xl border bg-card p-5 shadow-sm">
-            <h3 className="mb-2 font-bold">{lesson.story.title}</h3>
-            <p className="mb-3 text-base text-muted-foreground">{lesson.story.intro}</p>
-            <p className="rounded-xl border bg-muted/40 p-4 text-base italic leading-relaxed">"{lesson.story.text}"</p>
-            <p className="mt-3 text-base text-muted-foreground">{lesson.story.outro}</p>
-          </div>
+          {lesson.story.text.trim() !== '' && (
+            <div className="rounded-2xl border bg-card p-5 shadow-sm">
+              <h3 className="mb-2 font-bold">{lesson.story.title}</h3>
+              <p className="mb-3 text-base text-muted-foreground">{lesson.story.intro}</p>
+              <p className="rounded-xl border bg-muted/40 p-4 text-base italic leading-relaxed">"{lesson.story.text}"</p>
+              <p className="mt-3 text-base text-muted-foreground">{lesson.story.outro}</p>
+            </div>
+          )}
 
           {lesson.tips.map((tip) => (
             <div key={tip.title} className="rounded-2xl border bg-card p-5 shadow-sm">
